@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#EFEEE8;font-family:'Instrument Sans',system-ui,sans-serif}
+a{color:#315C49}a:hover{color:#123426}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08);scroll-margin-top:16px}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 'Instrument Sans',system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:36px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 'Instrument Sans',system-ui,sans-serif;color:rgba(0,0,0,.55)}
+.dv-opt:target .dv-oid{background:#315C49;color:#fff}
+.dv-next{margin:26px 0 0;font:12px/1.5 'Instrument Sans',system-ui,sans-serif;color:rgba(0,0,0,.5)}
+.dv-note{max-width:660px;font:13px/1.6 'Instrument Sans',system-ui,sans-serif;color:rgba(0,0,0,.62);margin:0 0 22px}
+</style></helmet>
+
+<section class="dv-turn" id="t1">
+<div class="dv-thd"><a class="dv-tid" href="#t1">1</a><span class="dv-tname">My Recovery Coach — Android redesign</span></div>
+<p class="dv-note">Palette, copy and data model taken from the Phase 1 source: primary #315C49, background #F7F7F1, surface #FFFEF8, and the three level tones (#D8ECDD / #FFE6B5 / #FFDAD6). Type is Instrument Serif for screen titles and the level word, Instrument Sans for everything else. Nav is label-only — no invented icons. <a class="dv-oid" href="#1a">1a</a>–<a class="dv-oid" href="#1d">1d</a> are one settled direction; <a class="dv-oid" href="#1e">1e</a>–<a class="dv-oid" href="#1g">1g</a> riff on the Today hero only.</p>
+<div class="dv-opts">
+
+<div class="dv-opt" id="1a">
+<div class="dv-olabel"><a class="dv-oid" href="#1a">1a</a>Today — plan, actuals, recovery</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 412 }}" height="{{ 892 }}" hint-size="428px,908px">
+<div style="height:100%;display:flex;flex-direction:column;background:#F7F7F1;font-family:'Instrument Sans',system-ui,sans-serif">
+  <div style="flex:1;overflow:auto;padding:20px 18px 24px;display:flex;flex-direction:column;gap:16px">
+
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#315C49">TODAY</div>
+      <div style="font-family:'Instrument Serif',Georgia,serif;font-size:29px;line-height:1.1;color:#1C1F1B">Thursday, 3 September 2026</div>
+      <div style="font-size:13px;line-height:1.45;color:#4A4F48;margin-top:4px;text-wrap:pretty">Consistency includes taking recovery seriously.</div>
+    </div>
+
+    <sc-if value="{{ isEasy }}" hint-placeholder-val="{{ true }}">
+    <div style="background:#FFE6B5;border-radius:22px;padding:20px">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:#5C3A00;opacity:.8">TODAY'S RECOMMENDATION</div>
+      <div style="font-family:'Instrument Serif',Georgia,serif;font-size:36px;line-height:1.05;color:#5C3A00;margin-top:6px">Easy day</div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:14px">
+        <div style="display:flex;gap:9px;align-items:flex-start"><div style="width:5px;height:5px;border-radius:50%;background:#5C3A00;margin-top:7px;flex:none"></div><div style="font-size:13.5px;line-height:1.42;color:#5C3A00;text-wrap:pretty">Fatigue 4/10 is at your easy threshold.</div></div>
+        <div style="display:flex;gap:9px;align-items:flex-start"><div style="width:5px;height:5px;border-radius:50%;background:#5C3A00;margin-top:7px;flex:none"></div><div style="font-size:13.5px;line-height:1.42;color:#5C3A00;text-wrap:pretty">Recent load is 23% above your 28-day baseline.</div></div>
+      </div>
+    </div>
+    </sc-if>
+    <sc-if value="{{ isNormal }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#D8ECDD;border-radius:22px;padding:20px">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:#173E2B;opacity:.8">TODAY'S RECOMMENDATION</div>
+      <div style="font-family:'Instrument Serif',Georgia,serif;font-size:36px;line-height:1.05;color:#173E2B;margin-top:6px">Normal day</div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:14px">
+        <div style="display:flex;gap:9px;align-items:flex-start"><div style="width:5px;height:5px;border-radius:50%;background:#173E2B;margin-top:7px;flex:none"></div><div style="font-size:13.5px;line-height:1.42;color:#173E2B;text-wrap:pretty">No rule triggered an easier day.</div></div>
+        <div style="display:flex;gap:9px;align-items:flex-start"><div style="width:5px;height:5px;border-radius:50%;background:#173E2B;margin-top:7px;flex:none"></div><div style="font-size:13.5px;line-height:1.42;color:#173E2B;text-wrap:pretty">Yesterday's check-in was within your usual range.</div></div>
+      </div>
+    </div>
+    </sc-if>
+    <sc-if value="{{ isRecovery }}" hint-placeholder-val="{{ false }}">
+    <div style="background:#FFDAD6;border-radius:22px;padding:20px">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:#6A1A18;opacity:.8">TODAY'S RECOMMENDATION</div>
+      <div style="font-family:'Instrument Serif',Georgia,serif;font-size:36px;line-height:1.05;color:#6A1A18;margin-top:6px">Recovery day</div>
+      <div style="display:flex;flex-direction:column;gap:9px;margin-top:14px">
+        <div style="display:flex;gap:9px;align-items:flex-start"><div style="width:5px;height:5px;border-radius:50%;background:#6A1A18;margin-top:7px;flex:none"></div><div style="font-size:13.5px;line-height:1.42;color:#6A1A18;text-wrap:pretty">Weight-bearing pain reached 5/10, your recovery threshold.</div></div>
+        <div style="font-size:13.5px;line-height:1.42;color:#6A1A18;font-weight:600;text-wrap:pretty;margin-top:3px">Stop the deliberate walk and seek assessment if this does not settle.</div>
+      </div>
+    </div>
+    </sc-if>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        <div style="font-size:18px;font-weight:600;color:#1C1F1B">Today's plan</div>
+        <div style="font-size:12px;line-height:1.4;color:#4A4F48;text-wrap:pretty">Health data can fill this automatically in Phase 2; for now, confirm manually.</div>
+      </div>
+      <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:6px 10px">
+        <sc-for list="{{ planRows }}" as="row" hint-placeholder-count="5">
+        <div onClick="{{ row.toggle }}" style="display:flex;align-items:center;gap:12px;padding:10px 6px;cursor:pointer;border-radius:10px" style-hover="background:#F2F4EF">
+          <sc-if value="{{ row.done }}" hint-placeholder-val="{{ false }}">
+            <div style="width:22px;height:22px;border-radius:6px;background:#315C49;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;line-height:1">✓</div>
+          </sc-if>
+          <sc-if value="{{ row.open }}" hint-placeholder-val="{{ true }}">
+            <div style="width:22px;height:22px;border-radius:6px;border:2px solid #7C8479;box-sizing:border-box;flex:none"></div>
+          </sc-if>
+          <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+            <div style="font-size:11px;font-weight:600;letter-spacing:.5px;color:#315C49;text-transform:uppercase">{{ row.when }}</div>
+            <div style="font-size:15px;font-weight:500;color:#1C1F1B">{{ row.title }}</div>
+          </div>
+        </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="font-size:18px;font-weight:600;color:#1C1F1B">Actual activity</div>
+        <div onClick="{{ openLog }}" style="border:1px solid #C3CBBF;border-radius:100px;padding:8px 16px;font-size:13px;font-weight:600;color:#315C49;cursor:pointer" style-hover="background:#D5EBDD">Edit</div>
+      </div>
+      <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:6px 16px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0">
+          <div style="display:flex;flex-direction:column;gap:1px"><div style="font-size:15px;color:#1C1F1B">Morning walk</div><div style="font-size:12px;color:#4A4F48">47 min · 11:24 / km</div></div>
+          <div style="font-size:16px;font-weight:600;color:#1C1F1B">4.12 km</div>
+        </div>
+        <div style="height:1px;background:#E9ECE5"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0">
+          <div style="font-size:15px;color:#1C1F1B">Total walking</div><div style="font-size:16px;font-weight:600;color:#1C1F1B">6.8 km</div>
+        </div>
+        <div style="height:1px;background:#E9ECE5"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0">
+          <div style="font-size:15px;color:#1C1F1B">Steps</div><div style="font-size:16px;font-weight:600;color:#1C1F1B">9,412</div>
+        </div>
+        <div style="height:1px;background:#E9ECE5"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0">
+          <div style="display:flex;flex-direction:column;gap:1px"><div style="font-size:15px;color:#1C1F1B">Swimming</div><div style="font-size:12px;color:#4A4F48">42 min</div></div>
+          <div style="font-size:16px;font-weight:600;color:#1C1F1B">800 m</div>
+        </div>
+        <sc-if value="{{ secondary }}" hint-placeholder-val="{{ false }}">
+          <div style="height:1px;background:#E9ECE5"></div>
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:11px 0">
+            <div style="display:flex;flex-direction:column;gap:2px;max-width:220px"><div style="font-size:15px;color:#1C1F1B">Heart Points</div><div style="font-size:11.5px;line-height:1.35;color:#4A4F48;text-wrap:pretty">Secondary information only; never used for recovery decisions.</div></div>
+            <div style="font-size:16px;font-weight:600;color:#1C1F1B">31</div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:18px;font-weight:600;color:#1C1F1B">Recovery</div>
+      <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:6px 16px 14px">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0"><div style="font-size:15px;color:#1C1F1B">Energy</div><div style="font-size:16px;font-weight:600;color:#1C1F1B">3/5</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0"><div style="font-size:15px;color:#1C1F1B">Fatigue</div><div style="font-size:16px;font-weight:600;color:#1C1F1B">4/10</div></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0"><div style="font-size:15px;color:#1C1F1B">Highest soreness</div><div style="font-size:16px;font-weight:600;color:#1C1F1B">3/10</div></div>
+        <div style="background:#D8ECDD;border-radius:16px;padding:16px;margin-top:8px">
+          <div style="font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:#173E2B;opacity:.8">TOMORROW</div>
+          <div style="font-family:'Instrument Serif',Georgia,serif;font-size:26px;line-height:1.1;color:#173E2B;margin-top:4px">Normal day</div>
+          <div style="font-size:13px;line-height:1.42;color:#173E2B;margin-top:8px;text-wrap:pretty">Today is scheduled easy, and nothing in tonight's check-in extends it.</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:18px;font-weight:600;color:#1C1F1B">Seven-day trend</div>
+      <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:14px 16px;display:flex;gap:10px">
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:#1C1F1B">44.6</div><div style="font-size:11.5px;color:#4A4F48">km walking</div></div>
+        <div style="width:1px;background:#E9ECE5"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:#1C1F1B">388</div><div style="font-size:11.5px;color:#4A4F48">exercise min</div></div>
+        <div style="width:1px;background:#E9ECE5"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:#1C1F1B">1</div><div style="font-size:11.5px;color:#4A4F48">recovery day</div></div>
+      </div>
+    </div>
+
+  </div>
+  <div style="display:flex;background:#FFFEF8;border-top:1px solid #E9ECE5;padding:10px 8px 14px;gap:4px">
+    <div style="flex:1;display:flex;justify-content:center"><div style="background:#D5EBDD;border-radius:100px;padding:8px 16px;font-size:12.5px;font-weight:600;color:#123426">Today</div></div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="padding:8px 12px;font-size:12.5px;font-weight:500;color:#4A4F48">Check-in</div></div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="padding:8px 12px;font-size:12.5px;font-weight:500;color:#4A4F48">Week</div></div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="padding:8px 12px;font-size:12.5px;font-weight:500;color:#4A4F48">Settings</div></div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1b">
+<div class="dv-olabel"><a class="dv-oid" href="#1b">1b</a>Evening check-in — energy chips are live</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 412 }}" height="{{ 892 }}" hint-size="428px,908px">
+<div style="height:100%;display:flex;flex-direction:column;background:#F7F7F1;font-family:'Instrument Sans',system-ui,sans-serif">
+  <div style="flex:1;overflow:auto;padding:20px 18px 24px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#315C49">EVENING</div>
+      <div style="font-family:'Instrument Serif',Georgia,serif;font-size:30px;line-height:1.1;color:#1C1F1B">20-second check-in</div>
+      <div style="font-size:13px;line-height:1.45;color:#4A4F48;margin-top:4px;text-wrap:pretty">A few honest signals are more useful than a long questionnaire.</div>
+    </div>
+
+    <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+        <div style="font-size:15.5px;font-weight:600;color:#1C1F1B">How was your energy today?</div>
+        <div style="font-size:14px;font-weight:700;color:#315C49">{{ energyLabel }}</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <sc-for list="{{ energyChips }}" as="chip" hint-placeholder-count="5">
+        <div onClick="{{ chip.pick }}" style="flex:1;cursor:pointer">
+          <sc-if value="{{ chip.on }}" hint-placeholder-val="{{ false }}">
+            <div style="background:#D5EBDD;border:1px solid #315C49;border-radius:10px;padding:11px 0;text-align:center;font-size:15px;font-weight:700;color:#123426">{{ chip.n }}</div>
+          </sc-if>
+          <sc-if value="{{ chip.off }}" hint-placeholder-val="{{ true }}">
+            <div style="background:#FFFEF8;border:1px solid #C3CBBF;border-radius:10px;padding:11px 0;text-align:center;font-size:15px;font-weight:500;color:#4A4F48" style-hover="background:#F2F4EF">{{ chip.n }}</div>
+          </sc-if>
+        </div>
+        </sc-for>
+      </div>
+      <div style="font-size:12.5px;color:#4A4F48">{{ energyWord }}</div>
+    </div>
+
+    <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+        <div style="font-size:15.5px;font-weight:600;color:#1C1F1B">Leg / body fatigue</div>
+        <div style="font-size:14px;font-weight:700;color:#315C49">4 / 10</div>
+      </div>
+      <div style="position:relative;height:20px;display:flex;align-items:center">
+        <div style="position:absolute;left:0;right:0;height:6px;border-radius:3px;background:#E9ECE5"></div>
+        <div style="position:absolute;left:0;width:40%;height:6px;border-radius:3px;background:#315C49"></div>
+        <div style="position:absolute;left:40%;transform:translateX(-50%);width:20px;height:20px;border-radius:50%;background:#315C49;border:2px solid #FFFEF8;box-sizing:border-box"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#4A4F48"><span>0 none</span><span>10 severe</span></div>
+    </div>
+
+    <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px">
+      <div style="font-size:15.5px;font-weight:600;color:#1C1F1B">General feeling</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="border:1px solid #C3CBBF;border-radius:10px;padding:12px 14px;font-size:14.5px;color:#4A4F48">Fresh</div>
+        <div style="background:#D5EBDD;border:1px solid #315C49;border-radius:10px;padding:12px 14px;font-size:14.5px;font-weight:600;color:#123426">Normal</div>
+        <div style="border:1px solid #C3CBBF;border-radius:10px;padding:12px 14px;font-size:14.5px;color:#4A4F48">Slightly tired</div>
+        <div style="border:1px solid #C3CBBF;border-radius:10px;padding:12px 14px;font-size:14.5px;color:#4A4F48">Very tired</div>
+      </div>
+    </div>
+
+    <div style="border:1px solid #C3CBBF;border-radius:100px;padding:13px 0;text-align:center;font-size:14px;font-weight:600;color:#315C49">Add pain / soreness details (optional)</div>
+    <div style="border:1px solid #E0BDBB;border-radius:100px;padding:13px 0;text-align:center;font-size:14px;font-weight:600;color:#9C2E2E">Report a warning symptom</div>
+
+    <div style="border:1px solid #C3CBBF;border-radius:12px;padding:14px;min-height:72px;background:#FFFEF8">
+      <div style="font-size:12px;color:#4A4F48">Notes (optional)</div>
+    </div>
+
+    <div style="background:#315C49;border-radius:100px;padding:15px 0;text-align:center;font-size:15px;font-weight:600;color:#FFFFFF">Save and see tomorrow</div>
+  </div>
+  <div style="display:flex;background:#FFFEF8;border-top:1px solid #E9ECE5;padding:10px 8px 14px;gap:4px">
+    <div style="flex:1;display:flex;justify-content:center"><div style="padding:8px 12px;font-size:12.5px;font-weight:500;color:#4A4F48">Today</div></div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="background:#D5EBDD;border-radius:100px;padding:8px 16px;font-size:12.5px;font-weight:600;color:#123426">Check-in</div></div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="padding:8px 12px;font-size:12.5px;font-weight:500;color:#4A4F48">Week</div></div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="padding:8px 12px;font-size:12.5px;font-weight:500;color:#4A4F48">Settings</div></div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1c">
+<div class="dv-olabel"><a class="dv-oid" href="#1c">1c</a>Week — load bars against your own baseline</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 412 }}" height="{{ 892 }}" hint-size="428px,908px">
+<div style="height:100%;display:flex;flex-direction:column;background:#F7F7F1;font-family:'Instrument Sans',system-ui,sans-serif">
+  <div style="flex:1;overflow:auto;padding:20px 18px 24px;display:flex;flex-direction:column;gap:14px">
+    <div style="display:flex;flex-direction:column;gap:2px">
+      <div style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#315C49">TRENDS</div>
+      <div style="font-family:'Instrument Serif',Georgia,serif;font-size:30px;line-height:1.1;color:#1C1F1B">Your last seven days</div>
+      <div style="font-size:13px;line-height:1.45;color:#4A4F48;margin-top:4px;text-wrap:pretty">Compare against your own routine, not a generic leaderboard.</div>
+    </div>
+
+    <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between"><div style="font-size:13px;font-weight:600;color:#1C1F1B">Daily load estimate</div><div style="font-size:11.5px;color:#4A4F48">28-day average shown as the line</div></div>
+      <div style="position:relative;height:132px;display:flex;align-items:flex-end;gap:10px">
+        <div style="position:absolute;left:0;right:0;bottom:62px;height:1px;background:#7C8479"></div>
+        <sc-for list="{{ loadBars }}" as="bar" hint-placeholder-count="7">
+          <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;justify-content:flex-end">
+            <div style="width:100%;border-radius:6px 6px 0 0;background:{{ bar.color }};height:{{ bar.h }}px"></div>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:10px">
+        <sc-for list="{{ loadBars }}" as="bar" hint-placeholder-count="7">
+          <div style="flex:1;text-align:center;font-size:11px;color:#4A4F48">{{ bar.day }}</div>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:#4A4F48">
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:2px;background:#315C49"></div>Normal</div>
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:2px;background:#D9A741"></div>Easy</div>
+        <div style="display:flex;align-items:center;gap:6px"><div style="width:9px;height:9px;border-radius:2px;background:#C0685F"></div>Recovery</div>
+      </div>
+    </div>
+
+    <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:6px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0"><div style="font-size:15px;color:#1C1F1B">Walking</div><div style="font-size:16px;font-weight:600;color:#1C1F1B">44.6 km</div></div>
+      <div style="height:1px;background:#E9ECE5"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0"><div style="font-size:15px;color:#1C1F1B">Exercise minutes</div><div style="font-size:16px;font-weight:600;color:#1C1F1B">388</div></div>
+      <div style="height:1px;background:#E9ECE5"></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 0"><div style="font-size:15px;color:#1C1F1B">Swimming</div><div style="font-size:16px;font-weight:600;color:#1C1F1B">126 min</div></div>
+      <div style="height:1px;background:#E9ECE5"></div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:11px 0">
+        <div style="display:flex;flex-direction:column;gap:2px;max-width:210px"><div style="font-size:15px;color:#1C1F1B">28-day walking reference</div><div style="font-size:11.5px;line-height:1.35;color:#4A4F48">Based on 26 locally logged days.</div></div>
+        <div style="font-size:16px;font-weight:600;color:#1C1F1B;text-align:right">36.2 km<br><span style="font-size:11.5px;font-weight:500;color:#4A4F48">per week</span></div>
+      </div>
+    </div>
+
+    <div style="font-size:18px;font-weight:600;color:#1C1F1B;margin-top:2px">Daily detail</div>
+
+    <sc-for list="{{ weekDays }}" as="day" hint-placeholder-count="3">
+    <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px">
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px">
+        <div style="display:flex;flex-direction:column;gap:1px"><div style="font-size:16px;font-weight:600;color:#1C1F1B">{{ day.name }}</div><div style="font-size:12px;color:#4A4F48">{{ day.date }}</div></div>
+        <div style="border-radius:100px;padding:6px 12px;font-size:11.5px;font-weight:700;color:#2F302D;background:{{ day.pill }}">{{ day.level }}</div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px"><span style="color:#4A4F48">Deliberate walk</span><span style="font-weight:500;color:#1C1F1B">{{ day.walk }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px"><span style="color:#4A4F48">Total movement</span><span style="font-weight:500;color:#1C1F1B">{{ day.total }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px"><span style="color:#4A4F48">Swimming</span><span style="font-weight:500;color:#1C1F1B">{{ day.swim }}</span></div>
+        <div style="display:flex;justify-content:space-between;gap:12px;font-size:13px"><span style="color:#4A4F48">Recovery feedback</span><span style="font-weight:500;color:#1C1F1B">{{ day.feedback }}</span></div>
+      </div>
+    </div>
+    </sc-for>
+  </div>
+  <div style="display:flex;background:#FFFEF8;border-top:1px solid #E9ECE5;padding:10px 8px 14px;gap:4px">
+    <div style="flex:1;display:flex;justify-content:center"><div style="padding:8px 12px;font-size:12.5px;font-weight:500;color:#4A4F48">Today</div></div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="padding:8px 12px;font-size:12.5px;font-weight:500;color:#4A4F48">Check-in</div></div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="background:#D5EBDD;border-radius:100px;padding:8px 16px;font-size:12.5px;font-weight:600;color:#123426">Week</div></div>
+    <div style="flex:1;display:flex;justify-content:center"><div style="padding:8px 12px;font-size:12.5px;font-weight:500;color:#4A4F48">Settings</div></div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1d">
+<div class="dv-olabel"><a class="dv-oid" href="#1d">1d</a>Log activity — one sheet, no stepper</div>
+<x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 412 }}" height="{{ 892 }}" hint-size="428px,908px">
+<div style="height:100%;position:relative;background:#F7F7F1;font-family:'Instrument Sans',system-ui,sans-serif;overflow:hidden">
+  <div style="padding:20px 18px;display:flex;flex-direction:column;gap:16px;filter:blur(1.5px);opacity:.5">
+    <div style="font-size:11px;font-weight:700;letter-spacing:1.2px;color:#315C49">TODAY</div>
+    <div style="font-family:'Instrument Serif',Georgia,serif;font-size:29px;line-height:1.1;color:#1C1F1B">Thursday, 3 September 2026</div>
+    <div style="background:#FFE6B5;border-radius:22px;padding:20px;height:120px"></div>
+    <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:16px;height:180px"></div>
+  </div>
+  <div style="position:absolute;inset:0;background:rgba(28,31,27,.32)"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;background:#FFFEF8;border-radius:26px 26px 0 0;padding:12px 20px 24px;display:flex;flex-direction:column;gap:14px;max-height:88%;overflow:auto">
+    <div style="width:34px;height:4px;border-radius:2px;background:#C3CBBF;align-self:center"></div>
+    <div style="display:flex;flex-direction:column;gap:3px">
+      <div style="font-family:'Instrument Serif',Georgia,serif;font-size:25px;color:#1C1F1B">Today's activity</div>
+      <div style="font-size:12.5px;color:#4A4F48">Leave anything you did not do blank.</div>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#315C49;margin-top:2px">DELIBERATE MORNING WALK</div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;border:1px solid #C3CBBF;border-radius:12px;padding:10px 14px"><div style="font-size:11px;color:#4A4F48">Distance (km)</div><div style="font-size:18px;font-weight:600;color:#1C1F1B">4.12</div></div>
+      <div style="flex:1;border:1px solid #315C49;border-radius:12px;padding:10px 14px;background:#F4F8F4"><div style="font-size:11px;color:#315C49;font-weight:600">Duration (minutes)</div><div style="font-size:18px;font-weight:600;color:#1C1F1B">47<span style="color:#315C49">|</span></div></div>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#315C49;margin-top:2px">TOTAL DAY</div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;border:1px solid #C3CBBF;border-radius:12px;padding:10px 14px"><div style="font-size:11px;color:#4A4F48">Walking distance (km)</div><div style="font-size:18px;font-weight:600;color:#1C1F1B">6.8</div></div>
+      <div style="flex:1;border:1px solid #C3CBBF;border-radius:12px;padding:10px 14px"><div style="font-size:11px;color:#4A4F48">Steps</div><div style="font-size:18px;font-weight:600;color:#1C1F1B">9,412</div></div>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#315C49;margin-top:2px">SWIMMING</div>
+    <div style="display:flex;gap:10px">
+      <div style="flex:1;border:1px solid #C3CBBF;border-radius:12px;padding:10px 14px"><div style="font-size:11px;color:#4A4F48">Distance (metres)</div><div style="font-size:18px;font-weight:600;color:#1C1F1B">800</div></div>
+      <div style="flex:1;border:1px solid #C3CBBF;border-radius:12px;padding:10px 14px"><div style="font-size:11px;color:#4A4F48">Duration (minutes)</div><div style="font-size:18px;font-weight:600;color:#1C1F1B">42</div></div>
+    </div>
+
+    <div style="font-size:11px;font-weight:700;letter-spacing:1px;color:#315C49;margin-top:2px">OTHER METRICS</div>
+    <div style="border:1px solid #C3CBBF;border-radius:12px;padding:10px 14px"><div style="font-size:11px;color:#4A4F48">Heart Points (optional)</div><div style="font-size:18px;font-weight:600;color:#1C1F1B">31</div></div>
+    <div style="font-size:11.5px;line-height:1.4;color:#4A4F48;text-wrap:pretty">Heart Points are stored only as secondary information.</div>
+
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <div style="flex:1;border:1px solid #C3CBBF;border-radius:100px;padding:14px 0;text-align:center;font-size:14.5px;font-weight:600;color:#315C49">Cancel</div>
+      <div style="flex:1.4;background:#315C49;border-radius:100px;padding:14px 0;text-align:center;font-size:14.5px;font-weight:600;color:#FFFFFF">Save</div>
+    </div>
+  </div>
+</div>
+</x-import>
+</div>
+
+<div class="dv-opt" id="1e">
+<div class="dv-olabel"><a class="dv-oid" href="#1e">1e</a>Hero riff — three-step level track</div>
+<div style="width:376px;background:#F7F7F1;border-radius:20px;padding:18px;border:1px solid rgba(0,0,0,.07)">
+  <div style="background:#FFFEF8;border:1px solid #E9ECE5;border-radius:22px;padding:20px;font-family:'Instrument Sans',system-ui,sans-serif">
+    <div style="font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:#4A4F48">TODAY'S RECOMMENDATION</div>
+    <div style="display:flex;gap:6px;margin-top:14px">
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px"><div style="height:7px;border-radius:4px;background:#E9ECE5"></div><div style="font-size:11.5px;color:#7C8479">Normal</div></div>
+      <div style="flex:1.3;display:flex;flex-direction:column;gap:6px"><div style="height:7px;border-radius:4px;background:#D9A741"></div><div style="font-size:11.5px;font-weight:700;color:#5C3A00">Easy</div></div>
+      <div style="flex:1;display:flex;flex-direction:column;gap:6px"><div style="height:7px;border-radius:4px;background:#E9ECE5"></div><div style="font-size:11.5px;color:#7C8479">Recovery</div></div>
+    </div>
+    <div style="font-family:'Instrument Serif',Georgia,serif;font-size:34px;line-height:1.05;color:#1C1F1B;margin-top:16px">Easy day</div>
+    <div style="height:1px;background:#E9ECE5;margin:14px 0"></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="font-size:13.5px;line-height:1.42;color:#3A403A;text-wrap:pretty">Fatigue 4/10 is at your easy threshold.</div>
+      <div style="font-size:13.5px;line-height:1.42;color:#3A403A;text-wrap:pretty">Recent load is 23% above your 28-day baseline.</div>
+    </div>
+    <div style="margin-top:16px;font-size:12.5px;font-weight:600;color:#315C49">Why this? →</div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1f">
+<div class="dv-olabel"><a class="dv-oid" href="#1f">1f</a>Hero riff — quiet typographic, rules only</div>
+<div style="width:376px;background:#F7F7F1;border-radius:20px;padding:18px;border:1px solid rgba(0,0,0,.07)">
+  <div style="background:#FFFEF8;border-left:4px solid #D9A741;border-radius:4px 22px 22px 4px;padding:22px 20px;font-family:'Instrument Sans',system-ui,sans-serif">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px">
+      <div style="font-family:'Instrument Serif',Georgia,serif;font-style:italic;font-size:38px;line-height:1;color:#1C1F1B">Easy</div>
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:#4A4F48">TODAY</div>
+    </div>
+    <div style="font-size:13px;color:#4A4F48;margin-top:6px">Two rules applied, strongest first</div>
+    <div style="display:flex;flex-direction:column;margin-top:16px">
+      <div style="height:1px;background:#E9ECE5"></div>
+      <div style="display:flex;gap:12px;padding:12px 0"><div style="font-family:'Instrument Serif',Georgia,serif;font-size:16px;color:#7C8479;min-width:16px">1</div><div style="font-size:13.5px;line-height:1.42;color:#3A403A;text-wrap:pretty">Fatigue 4/10 is at your easy threshold.</div></div>
+      <div style="height:1px;background:#E9ECE5"></div>
+      <div style="display:flex;gap:12px;padding:12px 0"><div style="font-family:'Instrument Serif',Georgia,serif;font-size:16px;color:#7C8479;min-width:16px">2</div><div style="font-size:13.5px;line-height:1.42;color:#3A403A;text-wrap:pretty">Recent load is 23% above your 28-day baseline.</div></div>
+      <div style="height:1px;background:#E9ECE5"></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<div class="dv-opt" id="1g">
+<div class="dv-olabel"><a class="dv-oid" href="#1g">1g</a>Hero riff — load ring, dark tonal</div>
+<div style="width:376px;background:#F7F7F1;border-radius:20px;padding:18px;border:1px solid rgba(0,0,0,.07)">
+  <div style="background:#26332C;border-radius:22px;padding:22px 20px;font-family:'Instrument Sans',system-ui,sans-serif;display:flex;gap:18px;align-items:center">
+    <div style="width:104px;height:104px;border-radius:50%;flex:none;background:conic-gradient(#D9A741 0deg 267deg,rgba(255,255,255,.14) 267deg 360deg);display:flex;align-items:center;justify-content:center">
+      <div style="width:78px;height:78px;border-radius:50%;background:#26332C;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px">
+        <div style="font-family:'Instrument Serif',Georgia,serif;font-size:24px;color:#FFFFFF;line-height:1">123%</div>
+        <div style="font-size:9.5px;letter-spacing:.6px;color:#ABD4BD">OF BASELINE</div>
+      </div>
+    </div>
+    <div style="min-width:0">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:1.1px;color:#ABD4BD">TODAY</div>
+      <div style="font-family:'Instrument Serif',Georgia,serif;font-size:32px;line-height:1.05;color:#FFFFFF;margin-top:4px">Easy day</div>
+      <div style="font-size:13px;line-height:1.42;color:#D7E4DA;margin-top:10px;text-wrap:pretty">Fatigue 4/10 and load above baseline. Keep the walk comfortable.</div>
+    </div>
+  </div>
+</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "keep <a class="dv-oid" href="#1a">1a</a> but swap in the hero from <a class="dv-oid" href="#1g">1g</a>" · "build Settings, History detail, Onboarding and the recommendation explanation in this style" · "add a live walking session view"</p>
+</section>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;level&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Normal&quot;,&quot;Easy&quot;,&quot;Recovery&quot;],&quot;default&quot;:&quot;Easy&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Today&quot;},&quot;showSecondaryMetrics&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Today&quot;}}">
+class Component extends DCLogic {
+  state = {
+    done: { morning: false, breakfast: true, lunch: true, dinner: false, evening: true },
+    energy: 3,
+  };
+
+  renderVals() {
+    const level = this.props.level ?? "Easy";
+    const d = this.state.done;
+    const row = (key, when, title) => ({
+      when, title, done: d[key], open: !d[key],
+      toggle: () => this.setState(s => ({ done: { ...s.done, [key]: !s.done[key] } })),
+    });
+    const energy = this.state.energy;
+    const words = ["", "Very low", "Low", "Normal", "Good", "Excellent"];
+    const bar = (day, h, color) => ({ day, h, color });
+    return {
+      isNormal: level === "Normal", isEasy: level === "Easy", isRecovery: level === "Recovery",
+      secondary: this.props.showSecondaryMetrics ?? false,
+      openLog: () => {},
+      planRows: [
+        row("morning", "Morning", "5.0 km deliberate walk"),
+        row("breakfast", "After breakfast", "10 min easy walk"),
+        row("lunch", "After lunch", "10 min easy walk"),
+        row("dinner", "After dinner", "10 min easy walk"),
+        row("evening", "Evening", "800 m swim, if comfortable"),
+      ],
+      energyChips: [1, 2, 3, 4, 5].map(n => ({
+        n, on: energy === n, off: energy !== n,
+        pick: () => this.setState({ energy: n }),
+      })),
+      energyLabel: energy + " / 5",
+      energyWord: words[energy],
+      loadBars: [
+        bar("Fri", 46, "#315C49"), bar("Sat", 78, "#315C49"), bar("Sun", 24, "#C0685F"),
+        bar("Mon", 64, "#315C49"), bar("Tue", 92, "#315C49"), bar("Wed", 71, "#315C49"),
+        bar("Thu", 38, "#D9A741"),
+      ],
+      weekDays: [
+        { name: "Wednesday", date: "2 Sep", level: "Normal", pill: "#D8ECDD", walk: "5.10 km · 52 min", total: "7.9 km · 11,204 steps", swim: "800 m · 41 min", feedback: "Fatigue 4/10 · soreness 3/10" },
+        { name: "Tuesday", date: "1 Sep", level: "Normal", pill: "#D8ECDD", walk: "5.40 km · 55 min", total: "9.2 km · 12,880 steps", swim: "1,000 m · 44 min", feedback: "Fatigue 3/10 · soreness 2/10" },
+        { name: "Monday", date: "31 Aug", level: "Easy", pill: "#FFE6B5", walk: "3.20 km · 36 min", total: "5.4 km · 7,610 steps", swim: "—", feedback: "Fatigue 5/10 · soreness 4/10" },
+      ],
+    };
+  }
+}
+
+</script>
+</body>
+</html>
