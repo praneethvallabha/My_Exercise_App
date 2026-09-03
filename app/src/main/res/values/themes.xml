@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.RecoveryCoach" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">#F7F7F1</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:navigationBarColor">#FFFEF8</item>
+    </style>
+</resources>
