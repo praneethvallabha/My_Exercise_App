@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -125,6 +126,9 @@ fun RecoveryApp(viewModel: RecoveryViewModel = viewModel()) {
         ModalBottomSheet(
             onDismissRequest = { showLogSheet = false },
             containerColor = RecoveryColors.Surface,
+            // A form this tall should not open half-height and make the user drag
+            // it up before they can see what they are filling in.
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
         ) {
             LogActivitySheetContent(
                 current = viewModel.activity,
