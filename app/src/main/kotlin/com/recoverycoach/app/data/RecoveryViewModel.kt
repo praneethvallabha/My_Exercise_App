@@ -6,21 +6,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.recoverycoach.app.domain.DailyPlan
 import com.recoverycoach.app.domain.GuidanceEngine
+import com.recoverycoach.app.domain.PlanBuilder
 import com.recoverycoach.app.domain.GuidanceResult
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.roundToInt
-
-private fun defaultPlanItems(doneIds: Set<String> = emptySet()) = listOf(
-    PlanItem("morning", "Morning", "5.0 km deliberate walk", done = "morning" in doneIds),
-    PlanItem("breakfast", "After breakfast", "10 min easy walk", done = "breakfast" in doneIds),
-    PlanItem("lunch", "After lunch", "10 min easy walk", done = "lunch" in doneIds),
-    PlanItem("dinner", "After dinner", "10 min easy walk", done = "dinner" in doneIds),
-    PlanItem("evening", "Evening", "800 m swim, if comfortable", done = "evening" in doneIds),
-)
 
 /**
  * Holds all of the app's state.
@@ -60,7 +54,7 @@ class RecoveryViewModel(application: Application) : AndroidViewModel(application
             applyDefaults()
         } else {
             if (storedDay == null) store.saveCurrentDayEpoch(today.toEpochDay())
-            saved.doneItemIds?.let { planItems = defaultPlanItems(it) }
+            saved.doneItemIds?.let { doneItemIds = it }
             saved.energy?.let { energy = it }
             saved.fatigue?.let { fatigue = it }
             saved.soreness?.let { soreness = it }
@@ -81,7 +75,7 @@ class RecoveryViewModel(application: Application) : AndroidViewModel(application
     }
 
     private fun applyDefaults() {
-        planItems = defaultPlanItems()
+        doneItemIds = emptySet()
         energy = 3
         fatigue = 4
         soreness = 3
@@ -111,14 +105,22 @@ class RecoveryViewModel(application: Application) : AndroidViewModel(application
 
     // ---- Today's plan ----------------------------------------------------
 
-    var planItems by mutableStateOf(defaultPlanItems())
+    /**
+     * Which items are ticked. The plan itself is derived from the recovery level,
+     * so only the ticks are state — otherwise the plan could drift out of step
+     * with the recommendation printed directly above it.
+     */
+    var doneItemIds by mutableStateOf(emptySet<String>())
         private set
 
+    val dailyPlan: DailyPlan
+        get() = PlanBuilder.build(recommendedLevel, doneItemIds)
+
+    val planItems: List<PlanItem> get() = dailyPlan.items
+
     fun togglePlanItem(id: String) {
-        planItems = planItems.map { if (it.id == id) it.copy(done = !it.done) else it }
-        viewModelScope.launch {
-            store.savePlanDoneIds(planItems.filter { it.done }.map { it.id }.toSet())
-        }
+        doneItemIds = if (id in doneItemIds) doneItemIds - id else doneItemIds + id
+        viewModelScope.launch { store.savePlanDoneIds(doneItemIds) }
     }
 
     // ---- Evening check-in --------------------------------------------------

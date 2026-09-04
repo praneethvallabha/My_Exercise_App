@@ -1,6 +1,7 @@
 package com.recoverycoach.app.ui.screens
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
 import androidx.compose.animation.graphics.res.animatedVectorResource
 import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
@@ -34,6 +35,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.recoverycoach.app.R
@@ -154,12 +156,28 @@ private fun RecommendationCard(viewModel: RecoveryViewModel) {
 
 @Composable
 private fun TodaysPlanSection(viewModel: RecoveryViewModel) {
+    val plan = viewModel.dailyPlan
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitle("Today's plan", "Health data can fill this automatically in Phase 2; for now, confirm manually.")
-        RecoveryCard(padding = PaddingValues(vertical = 6.dp, horizontal = 10.dp)) {
-            viewModel.planItems.forEach { item ->
+        // The rationale comes from the builder, so the plan cannot explain itself
+        // differently from how it was actually built.
+        SectionTitle("Today's plan", plan.rationale)
+        RecoveryCard(
+            modifier = Modifier.animateContentSize(
+                animationSpec = recoveryTween<IntSize>(RecoveryMotion.EMPHASIZED_MS),
+            ),
+            padding = PaddingValues(vertical = 6.dp, horizontal = 10.dp),
+        ) {
+            plan.items.forEach { item ->
                 PlanRow(item, onToggle = { viewModel.togglePlanItem(item.id) })
             }
+        }
+        plan.source?.let { source ->
+            Text(
+                source,
+                style = RecoveryType.rowCaption,
+                color = RecoveryColors.TextMuted,
+                modifier = Modifier.padding(start = 2.dp),
+            )
         }
     }
 }
