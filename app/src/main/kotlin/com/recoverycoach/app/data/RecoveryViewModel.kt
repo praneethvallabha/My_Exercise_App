@@ -1,34 +1,54 @@
 package com.recoverycoach.app.data
 
+import android.app.Application
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
+
+private fun defaultPlanItems(doneIds: Set<String> = setOf("breakfast", "lunch", "evening")) = listOf(
+    PlanItem("morning", "Morning", "5.0 km deliberate walk", done = "morning" in doneIds),
+    PlanItem("breakfast", "After breakfast", "10 min easy walk", done = "breakfast" in doneIds),
+    PlanItem("lunch", "After lunch", "10 min easy walk", done = "lunch" in doneIds),
+    PlanItem("dinner", "After dinner", "10 min easy walk", done = "dinner" in doneIds),
+    PlanItem("evening", "Evening", "800 m swim, if comfortable", done = "evening" in doneIds),
+)
 
 /**
- * Holds all of the app's state in memory for now. There is no persistence or
- * real health-data source yet (the design calls this out explicitly: "Health
- * data can fill this automatically in Phase 2; for now, confirm manually.").
- * Everything here is designed to be swapped for a real repository later
- * without the screens needing to change.
+ * Holds all of the app's state. Plan checkmarks, check-in answers, and
+ * logged activity are persisted via [RecoveryStore] (DataStore) so they
+ * survive an app restart; everything else (recommendation rules, Week's
+ * sample trend numbers) is still derived/placeholder, exactly as before.
  */
-class RecoveryViewModel : ViewModel() {
+class RecoveryViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val store = RecoveryStore(application)
+
+    init {
+        viewModelScope.launch {
+            val saved = store.load()
+            saved.doneItemIds?.let { planItems = defaultPlanItems(it) }
+            saved.energy?.let { energy = it }
+            saved.fatigue?.let { fatigue = it }
+            saved.soreness?.let { soreness = it }
+            saved.generalFeeling?.let { generalFeeling = it }
+            saved.notes?.let { notes = it }
+            saved.activity?.let { activity = it }
+        }
+    }
 
     // ---- Today's plan ----------------------------------------------------
 
-    var planItems by mutableStateOf(
-        listOf(
-            PlanItem("morning", "Morning", "5.0 km deliberate walk", done = false),
-            PlanItem("breakfast", "After breakfast", "10 min easy walk", done = true),
-            PlanItem("lunch", "After lunch", "10 min easy walk", done = true),
-            PlanItem("dinner", "After dinner", "10 min easy walk", done = false),
-            PlanItem("evening", "Evening", "800 m swim, if comfortable", done = true),
-        )
-    )
+    var planItems by mutableStateOf(defaultPlanItems())
         private set
 
     fun togglePlanItem(id: String) {
         planItems = planItems.map { if (it.id == id) it.copy(done = !it.done) else it }
+        viewModelScope.launch {
+            store.savePlanDoneIds(planItems.filter { it.done }.map { it.id }.toSet())
+        }
     }
 
     // ---- Evening check-in --------------------------------------------------
@@ -57,9 +77,9 @@ class RecoveryViewModel : ViewModel() {
     var notes by mutableStateOf("")
 
     fun saveCheckIn() {
-        // No persistence yet — the check-in values already live in this
-        // ViewModel's state and immediately drive `recommendedLevel` above.
-        // This hook exists so a real save-to-disk step has somewhere to go.
+        viewModelScope.launch {
+            store.saveCheckIn(energy, fatigue, soreness, generalFeeling, notes)
+        }
     }
 
     // ---- Actual activity (logged via the Log Activity sheet) --------------
@@ -69,6 +89,22 @@ class RecoveryViewModel : ViewModel() {
 
     fun updateActivity(updated: ActivityLog) {
         activity = updated
+        viewModelScope.launch { store.saveActivity(updated) }
+    }
+
+    // ---- Settings ----------------------------------------------------------
+
+    /** Wipes persisted data and resets every field back to its Phase 1 default. */
+    fun resetAllData() {
+        planItems = defaultPlanItems()
+        energy = 3
+        fatigue = 4
+        soreness = 3
+        soreDetailsExpanded = false
+        generalFeeling = GeneralFeeling.NORMAL
+        notes = ""
+        activity = ActivityLog()
+        viewModelScope.launch { store.clearAll() }
     }
 
     // ---- Recommendation ------------------------------------------------

@@ -69,7 +69,7 @@ fun RecoveryApp(viewModel: RecoveryViewModel = viewModel()) {
                     modifier = Modifier.fillMaxSize(),
                 )
                 RecoveryDestination.WEEK -> WeekScreen(viewModel = viewModel, modifier = Modifier.fillMaxSize())
-                RecoveryDestination.SETTINGS -> SettingsScreen(modifier = Modifier.fillMaxSize())
+                RecoveryDestination.SETTINGS -> SettingsScreen(viewModel = viewModel, modifier = Modifier.fillMaxSize())
             }
         }
     }
