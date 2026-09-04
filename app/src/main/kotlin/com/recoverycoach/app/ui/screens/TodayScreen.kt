@@ -1,5 +1,7 @@
 package com.recoverycoach.app.ui.screens
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -18,10 +20,13 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -29,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.recoverycoach.app.data.PlanItem
 import com.recoverycoach.app.data.RecoveryLevel
 import com.recoverycoach.app.data.RecoveryViewModel
+import com.recoverycoach.app.ui.components.GuidanceCard
 import com.recoverycoach.app.ui.components.OutlinedPillButton
 import com.recoverycoach.app.ui.components.RecoveryCard
 import com.recoverycoach.app.ui.components.RowDivider
@@ -36,7 +42,9 @@ import com.recoverycoach.app.ui.components.SectionEyebrow
 import com.recoverycoach.app.ui.components.SectionTitle
 import com.recoverycoach.app.ui.components.StatRow
 import com.recoverycoach.app.ui.theme.RecoveryColors
+import com.recoverycoach.app.ui.theme.RecoveryMotion
 import com.recoverycoach.app.ui.theme.RecoveryType
+import com.recoverycoach.app.ui.theme.recoveryTween
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -56,6 +64,7 @@ fun TodayScreen(
     ) {
         Header()
         RecommendationCard(viewModel)
+        GuidanceCard(viewModel.guidance)
         TodaysPlanSection(viewModel)
         ActualActivitySection(viewModel, onEditActivity)
         RecoverySection(viewModel)
@@ -84,14 +93,26 @@ private fun Header() {
 @Composable
 private fun RecommendationCard(viewModel: RecoveryViewModel) {
     val level = viewModel.recommendedLevel
+    // The level can flip while the user is editing tonight's check-in; easing the
+    // colour makes that read as a considered change rather than a glitch.
+    val cardBg by animateColorAsState(
+        targetValue = level.cardBg,
+        animationSpec = recoveryTween(RecoveryMotion.EMPHASIZED_MS),
+        label = "recommendationBg",
+    )
+    val cardText by animateColorAsState(
+        targetValue = level.cardText,
+        animationSpec = recoveryTween(RecoveryMotion.EMPHASIZED_MS),
+        label = "recommendationText",
+    )
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(level.cardBg, RoundedCornerShape(22.dp))
+            .background(cardBg, RoundedCornerShape(22.dp))
             .padding(20.dp),
     ) {
-        Text("TODAY'S RECOMMENDATION", style = RecoveryType.heroLabel, color = level.cardText)
-        Text(level.title, style = RecoveryType.heroTitle, color = level.cardText, modifier = Modifier.padding(top = 6.dp))
+        Text("TODAY'S RECOMMENDATION", style = RecoveryType.heroLabel, color = cardText)
+        Text(level.title, style = RecoveryType.heroTitle, color = cardText, modifier = Modifier.padding(top = 6.dp))
         Column(modifier = Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             viewModel.recommendationReasons.forEach { reason ->
                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -99,16 +120,16 @@ private fun RecommendationCard(viewModel: RecoveryViewModel) {
                         modifier = Modifier
                             .padding(top = 7.dp)
                             .size(5.dp)
-                            .background(level.cardText, RoundedCornerShape(50)),
+                            .background(cardText, RoundedCornerShape(50)),
                     )
-                    Text(reason, style = RecoveryType.heroReason, color = level.cardText)
+                    Text(reason, style = RecoveryType.heroReason, color = cardText)
                 }
             }
             viewModel.recoveryWarning?.let { warning ->
                 Text(
                     warning,
                     style = RecoveryType.heroReason.copy(fontWeight = FontWeight.SemiBold),
-                    color = level.cardText,
+                    color = cardText,
                 )
             }
         }
@@ -137,21 +158,39 @@ private fun PlanRow(item: PlanItem, onToggle: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (item.done) {
-            Box(
+        // One box that fills and stamps its tick, rather than two boxes swapping —
+        // the checkmark grows in place, which reads as the action completing.
+        val fillColor by animateColorAsState(
+            targetValue = if (item.done) RecoveryColors.Primary else RecoveryColors.Surface,
+            animationSpec = recoveryTween(RecoveryMotion.FAST_MS),
+            label = "planCheckFill",
+        )
+        val borderColor by animateColorAsState(
+            targetValue = if (item.done) RecoveryColors.Primary else RecoveryColors.TextMuted,
+            animationSpec = recoveryTween(RecoveryMotion.FAST_MS),
+            label = "planCheckBorder",
+        )
+        val tickScale by animateFloatAsState(
+            targetValue = if (item.done) 1f else 0f,
+            animationSpec = recoveryTween(RecoveryMotion.FAST_MS, RecoveryMotion.Decelerate),
+            label = "planCheckTick",
+        )
+        Box(
+            modifier = Modifier
+                .size(22.dp)
+                .clip(RoundedCornerShape(6.dp))
+                .background(fillColor, RoundedCornerShape(6.dp))
+                .border(2.dp, borderColor, RoundedCornerShape(6.dp)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Text(
+                "✓",
+                color = RecoveryColors.Surface,
+                style = RecoveryType.rowValue,
+                textAlign = TextAlign.Center,
                 modifier = Modifier
-                    .size(22.dp)
-                    .background(RecoveryColors.Primary, RoundedCornerShape(6.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text("✓", color = RecoveryColors.Surface, style = RecoveryType.rowValue, textAlign = TextAlign.Center)
-            }
-        } else {
-            Box(
-                modifier = Modifier
-                    .size(22.dp)
-                    .clip(RoundedCornerShape(6.dp))
-                    .border(2.dp, RecoveryColors.TextMuted, RoundedCornerShape(6.dp)),
+                    .scale(tickScale)
+                    .alpha(tickScale),
             )
         }
         Column {
@@ -193,6 +232,12 @@ private fun ActualActivitySection(viewModel: RecoveryViewModel, onEditActivity: 
             StatRow("Steps", String.format(Locale.getDefault(), "%,d", activity.steps))
             RowDivider()
             StatRow("Swimming", "${activity.swimM} m", "${activity.swimMin} min")
+            RowDivider()
+            StatRow(
+                "Strength",
+                if (activity.strengthMin > 0) "${activity.strengthMin} min" else "—",
+                "Counted as a session for the week, however long it ran.",
+            )
             RowDivider()
             StatRow("Heart Points", "${activity.heartPoints}", "Secondary information only; never used for recovery decisions.")
         }
@@ -239,14 +284,18 @@ private fun TomorrowPreview(todayLevel: RecoveryLevel) {
 @Composable
 private fun SevenDayTrendSection(viewModel: RecoveryViewModel) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        SectionTitle("Seven-day trend")
+        SectionTitle(
+            "Seven-day trend",
+            "From ${viewModel.weekDaysLogged} logged " +
+                "${if (viewModel.weekDaysLogged == 1) "day" else "days"} in the last seven.",
+        )
         RecoveryCard {
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 TrendStat("${viewModel.weekWalkTotalKm}", "km walking", Modifier.weight(1f))
                 Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(RecoveryColors.BorderSubtle))
                 TrendStat("${viewModel.weekExerciseMinutes}", "exercise min", Modifier.weight(1f))
                 Box(modifier = Modifier.width(1.dp).fillMaxHeight().background(RecoveryColors.BorderSubtle))
-                TrendStat("${viewModel.weekRecoveryDays}", "recovery day", Modifier.weight(1f))
+                TrendStat("${viewModel.weekRecoveryDays}", if (viewModel.weekRecoveryDays == 1) "recovery day" else "recovery days", Modifier.weight(1f))
             }
         }
     }

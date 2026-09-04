@@ -1,5 +1,6 @@
 package com.recoverycoach.app.ui.screens
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -15,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -28,7 +30,9 @@ import com.recoverycoach.app.ui.components.RowDivider
 import com.recoverycoach.app.ui.components.SectionEyebrow
 import com.recoverycoach.app.ui.components.StatRow
 import com.recoverycoach.app.ui.theme.RecoveryColors
+import com.recoverycoach.app.ui.theme.RecoveryMotion
 import com.recoverycoach.app.ui.theme.RecoveryType
+import com.recoverycoach.app.ui.theme.recoveryTween
 
 @Composable
 fun WeekScreen(viewModel: RecoveryViewModel, modifier: Modifier = Modifier) {
@@ -42,7 +46,11 @@ fun WeekScreen(viewModel: RecoveryViewModel, modifier: Modifier = Modifier) {
         LoadChartCard(viewModel.loadBars)
         SummaryCard(viewModel)
         Text("Daily detail", style = RecoveryType.sectionTitle, color = RecoveryColors.TextPrimary, modifier = Modifier.padding(top = 2.dp))
-        viewModel.weekDays.forEach { day -> DailyDetailCard(day) }
+        if (viewModel.weekDays.isEmpty()) {
+            EmptyHistoryCard()
+        } else {
+            viewModel.weekDays.forEach { day -> DailyDetailCard(day) }
+        }
     }
 }
 
@@ -65,7 +73,7 @@ private fun LoadChartCard(bars: List<LoadBar>) {
     RecoveryCard {
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
             Text("Daily load estimate", style = RecoveryType.rowLabel.copy(fontWeight = FontWeight.SemiBold), color = RecoveryColors.TextPrimary)
-            Text("28-day average shown as the line", style = RecoveryType.rowCaption, color = RecoveryColors.TextSecondary)
+            Text("Walk and swim minutes per day", style = RecoveryType.rowCaption, color = RecoveryColors.TextSecondary)
         }
         Box(modifier = Modifier.fillMaxWidth().height(132.dp).padding(top = 14.dp)) {
             Box(
@@ -82,10 +90,15 @@ private fun LoadChartCard(bars: List<LoadBar>) {
                 verticalAlignment = Alignment.Bottom,
             ) {
                 bars.forEach { bar ->
+                    val height by animateDpAsState(
+                        targetValue = bar.heightDp.dp,
+                        animationSpec = recoveryTween(RecoveryMotion.EMPHASIZED_MS, RecoveryMotion.Decelerate),
+                        label = "loadBar-${bar.day}",
+                    )
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .height(bar.heightDp.dp)
+                            .height(height)
                             .background(bar.color, RoundedCornerShape(topStart = 6.dp, topEnd = 6.dp)),
                     )
                 }
@@ -121,13 +134,28 @@ private fun SummaryCard(viewModel: RecoveryViewModel) {
         RowDivider()
         StatRow("Swimming", "${viewModel.weekSwimMinutes} min")
         RowDivider()
+        StatRow(
+            "Strength sessions",
+            "${viewModel.weekStrengthSessions}",
+            "Guidance is 2-3 a week on nonconsecutive days (ADA, 2026).",
+        )
+        RowDivider()
         Row(
             modifier = Modifier.fillMaxWidth().padding(vertical = 11.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text("28-day walking reference", style = RecoveryType.rowLabel, color = RecoveryColors.TextPrimary)
-                Text("Based on ${viewModel.baselineDaysLogged} locally logged days.", style = RecoveryType.rowCaption, color = RecoveryColors.TextSecondary)
+                Text(
+                    if (viewModel.baselineDaysLogged == 0) {
+                        "No days logged yet."
+                    } else {
+                        "Based on ${viewModel.baselineDaysLogged} locally logged " +
+                            "${if (viewModel.baselineDaysLogged == 1) "day" else "days"}."
+                    },
+                    style = RecoveryType.rowCaption,
+                    color = RecoveryColors.TextSecondary,
+                )
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text("${viewModel.baselineWalkKmPerWeek} km", style = RecoveryType.rowValue, color = RecoveryColors.TextPrimary)
@@ -158,8 +186,23 @@ private fun DailyDetailCard(day: WeekDayRecord) {
             DetailLine("Deliberate walk", day.walk)
             DetailLine("Total movement", day.total)
             DetailLine("Swimming", day.swim)
+            DetailLine("Strength", day.strength)
             DetailLine("Recovery feedback", day.feedback)
         }
+    }
+}
+
+@Composable
+private fun EmptyHistoryCard() {
+    RecoveryCard {
+        Text("Nothing logged yet", style = RecoveryType.rowValue, color = RecoveryColors.TextPrimary)
+        Text(
+            "Days appear here once you save a check-in or log an activity. " +
+                "Trends and guidance are built only from days you actually recorded.",
+            style = RecoveryType.rowCaption,
+            color = RecoveryColors.TextSecondary,
+            modifier = Modifier.padding(top = 4.dp),
+        )
     }
 }
 
