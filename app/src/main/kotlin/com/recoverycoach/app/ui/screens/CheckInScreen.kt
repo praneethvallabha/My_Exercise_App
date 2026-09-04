@@ -8,7 +8,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.verticalScroll
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.OutlinedTextField
@@ -101,7 +101,7 @@ private fun EnergyCard(viewModel: RecoveryViewModel) {
                 Chip(
                     text = "$n",
                     selected = selected,
-                    onClick = { viewModel.setEnergy(n) },
+                    onClick = { viewModel.energy = n },
                     modifier = Modifier.weight(1f),
                 )
             }
@@ -127,7 +127,7 @@ private fun FatigueCard(viewModel: RecoveryViewModel) {
         }
         Slider(
             value = viewModel.fatigue.toFloat(),
-            onValueChange = { viewModel.setFatigue(it.toInt()) },
+            onValueChange = { viewModel.fatigue = it.toInt() },
             valueRange = 0f..10f,
             steps = 9,
             colors = SliderDefaults.colors(
@@ -156,7 +156,7 @@ private fun SorenessCard(viewModel: RecoveryViewModel) {
         }
         Slider(
             value = viewModel.soreness.toFloat(),
-            onValueChange = { viewModel.setSoreness(it.toInt()) },
+            onValueChange = { viewModel.soreness = it.toInt() },
             valueRange = 0f..10f,
             steps = 9,
             colors = SliderDefaults.colors(
@@ -179,7 +179,7 @@ private fun GeneralFeelingCard(viewModel: RecoveryViewModel) {
                 SelectableRow(
                     text = feeling.label,
                     selected = selected,
-                    onClick = { viewModel.setGeneralFeeling(feeling) },
+                    onClick = { viewModel.generalFeeling = feeling },
                 )
             }
         }
@@ -190,7 +190,7 @@ private fun GeneralFeelingCard(viewModel: RecoveryViewModel) {
 private fun NotesField(viewModel: RecoveryViewModel) {
     OutlinedTextField(
         value = viewModel.notes,
-        onValueChange = { viewModel.setNotes(it) },
+        onValueChange = { viewModel.notes = it },
         placeholder = { Text("Notes (optional)", style = RecoveryType.rowCaption, color = RecoveryColors.TextSecondary) },
         minLines = 3,
         colors = TextFieldDefaults.colors(

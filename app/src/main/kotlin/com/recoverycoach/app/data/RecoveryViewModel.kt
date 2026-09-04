@@ -33,28 +33,17 @@ class RecoveryViewModel : ViewModel() {
 
     // ---- Evening check-in --------------------------------------------------
 
+    // These are plain public vars rather than private-set-plus-setter-function:
+    // a same-named `fun setEnergy(...)` alongside `var energy` is a "platform
+    // declaration clash" in Kotlin — both compile to the same JVM method
+    // (`setEnergy(int)`), which the compiler rejects even though one is private.
     var energy by mutableStateOf(3)
-        private set
-
-    fun setEnergy(value: Int) {
-        energy = value
-    }
 
     /** Leg / body fatigue, 0 (none) to 10 (severe). */
     var fatigue by mutableStateOf(4)
-        private set
-
-    fun setFatigue(value: Int) {
-        fatigue = value.coerceIn(0, 10)
-    }
 
     /** Highest soreness reported, 0 (none) to 10 (severe). Entered via "Add pain / soreness details". */
     var soreness by mutableStateOf(3)
-        private set
-
-    fun setSoreness(value: Int) {
-        soreness = value.coerceIn(0, 10)
-    }
 
     var soreDetailsExpanded by mutableStateOf(false)
         private set
@@ -64,18 +53,8 @@ class RecoveryViewModel : ViewModel() {
     }
 
     var generalFeeling by mutableStateOf(GeneralFeeling.NORMAL)
-        private set
-
-    fun setGeneralFeeling(feeling: GeneralFeeling) {
-        generalFeeling = feeling
-    }
 
     var notes by mutableStateOf("")
-        private set
-
-    fun setNotes(value: String) {
-        notes = value
-    }
 
     fun saveCheckIn() {
         // No persistence yet — the check-in values already live in this
