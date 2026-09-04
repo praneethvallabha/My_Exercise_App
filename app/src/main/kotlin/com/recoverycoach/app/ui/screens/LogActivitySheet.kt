@@ -47,6 +47,7 @@ fun LogActivitySheetContent(
     var swimM by remember { mutableStateOf(current.swimM.toString()) }
     var swimMin by remember { mutableStateOf(current.swimMin.toString()) }
     var heartPoints by remember { mutableStateOf(current.heartPoints.toString()) }
+    var strengthMin by remember { mutableStateOf(current.strengthMin.toString()) }
 
     Column(
         modifier = modifier
@@ -77,6 +78,14 @@ fun LogActivitySheetContent(
             MetricField("Duration (minutes)", swimMin, { swimMin = it }, Modifier.weight(1f), keyboardType = KeyboardType.Number)
         }
 
+        SectionLabel("Strength")
+        MetricField("Duration (minutes)", strengthMin, { strengthMin = it }, keyboardType = KeyboardType.Number)
+        Text(
+            "Any resistance work counts as one session for the week, however long it ran.",
+            style = RecoveryType.rowCaption,
+            color = RecoveryColors.TextSecondary,
+        )
+
         SectionLabel("Other metrics")
         MetricField("Heart Points (optional)", heartPoints, { heartPoints = it }, keyboardType = KeyboardType.Number)
         Text(
@@ -99,6 +108,7 @@ fun LogActivitySheetContent(
                             swimM = swimM.toIntOrNull() ?: current.swimM,
                             swimMin = swimMin.toIntOrNull() ?: current.swimMin,
                             heartPoints = heartPoints.toIntOrNull() ?: current.heartPoints,
+                            strengthMin = strengthMin.toIntOrNull() ?: current.strengthMin,
                         )
                     )
                 },
