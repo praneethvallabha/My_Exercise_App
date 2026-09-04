@@ -33,8 +33,6 @@ android {
 
     buildFeatures {
         compose = true
-        // Needed for BuildConfig.DEBUG, which gates the debug-only history seeder.
-        buildConfig = true
     }
 
     packaging {

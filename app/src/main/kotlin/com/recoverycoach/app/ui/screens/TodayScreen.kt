@@ -34,13 +34,16 @@ import androidx.compose.ui.unit.sp
 import com.recoverycoach.app.data.PlanItem
 import com.recoverycoach.app.data.RecoveryLevel
 import com.recoverycoach.app.data.RecoveryViewModel
-import com.recoverycoach.app.ui.components.GuidanceCard
 import com.recoverycoach.app.ui.components.OutlinedPillButton
 import com.recoverycoach.app.ui.components.RecoveryCard
 import com.recoverycoach.app.ui.components.RowDivider
 import com.recoverycoach.app.ui.components.SectionEyebrow
 import com.recoverycoach.app.ui.components.SectionTitle
 import com.recoverycoach.app.ui.components.StatRow
+import com.recoverycoach.app.ui.effects.CountUpText
+import com.recoverycoach.app.ui.effects.ShinyText
+import com.recoverycoach.app.ui.effects.aurora
+import com.recoverycoach.app.ui.effects.clickSpark
 import com.recoverycoach.app.ui.theme.RecoveryColors
 import com.recoverycoach.app.ui.theme.RecoveryMotion
 import com.recoverycoach.app.ui.theme.RecoveryType
@@ -64,7 +67,6 @@ fun TodayScreen(
     ) {
         Header()
         RecommendationCard(viewModel)
-        GuidanceCard(viewModel.guidance)
         TodaysPlanSection(viewModel)
         ActualActivitySection(viewModel, onEditActivity)
         RecoverySection(viewModel)
@@ -108,11 +110,19 @@ private fun RecommendationCard(viewModel: RecoveryViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
             .background(cardBg, RoundedCornerShape(22.dp))
+            .aurora(tones = listOf(level.cardBg, RecoveryColors.Surface, level.loadBarColor.copy(alpha = 0.35f)))
             .padding(20.dp),
     ) {
         Text("TODAY'S RECOMMENDATION", style = RecoveryType.heroLabel, color = cardText)
-        Text(level.title, style = RecoveryType.heroTitle, color = cardText, modifier = Modifier.padding(top = 6.dp))
+        ShinyText(
+            text = level.title,
+            style = RecoveryType.heroTitle,
+            baseColor = cardText,
+            highlightColor = RecoveryColors.Surface,
+            modifier = Modifier.padding(top = 6.dp),
+        )
         Column(modifier = Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             viewModel.recommendationReasons.forEach { reason ->
                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -153,7 +163,7 @@ private fun PlanRow(item: PlanItem, onToggle: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onToggle)
+            .clickSpark(color = RecoveryColors.Primary, onClick = onToggle)
             .padding(vertical = 10.dp, horizontal = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -304,7 +314,12 @@ private fun SevenDayTrendSection(viewModel: RecoveryViewModel) {
 @Composable
 private fun TrendStat(number: String, label: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        Text(number, style = RecoveryType.statNumber, color = RecoveryColors.TextPrimary)
+        CountUpText(
+            value = (number.toDoubleOrNull() ?: 0.0).toInt(),
+            style = RecoveryType.statNumber,
+            color = RecoveryColors.TextPrimary,
+            format = { if (number.contains('.')) number else it.toString() },
+        )
         Text(label, style = RecoveryType.statLabel, color = RecoveryColors.TextSecondary)
     }
 }

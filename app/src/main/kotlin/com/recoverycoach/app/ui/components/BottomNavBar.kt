@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.recoverycoach.app.ui.effects.clickSpark
 import com.recoverycoach.app.ui.navigation.RecoveryDestination
 import com.recoverycoach.app.ui.theme.RecoveryColors
 import com.recoverycoach.app.ui.theme.RecoveryMotion
@@ -77,9 +78,9 @@ private fun NavItem(
     )
 
     Column(
-        modifier = modifier.clickable(
-            interactionSource = remember { MutableInteractionSource() },
-            indication = null,
+        modifier = modifier.clickSpark(
+            color = RecoveryColors.Primary,
+            radius = 26.dp,
             onClick = onClick,
         ),
         horizontalAlignment = Alignment.CenterHorizontally,

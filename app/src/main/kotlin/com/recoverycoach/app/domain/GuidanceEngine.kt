@@ -3,11 +3,8 @@ package com.recoverycoach.app.domain
 import com.recoverycoach.app.data.DayRecord
 
 /**
- * What [GuidanceEngine.evaluate] produces for a given day.
- *
- * [daysUntilFullGuidance] drives the cold-start state: until enough real days
- * have accumulated, the UI says how many are still needed rather than inventing
- * a tip from a week that does not exist yet.
+ * What [GuidanceEngine.evaluate] produces for a given day, split by the two
+ * filters on the Insights screen.
  */
 data class GuidanceResult(
     val daysLogged: Int,
@@ -15,22 +12,24 @@ data class GuidanceResult(
     val weeklyAerobicTargetMinutes: Int,
     val activeDays: Int,
     val strengthSessions: Int,
-    val tips: List<Tip>,
+    val weeklyStrengthTarget: Int,
     val daysUntilFullGuidance: Int,
+    val insights: List<Tip>,
+    val recovery: List<Tip>,
 )
 
 /**
- * Turns accumulated [DayRecord]s into a short list of sourced, actionable tips.
+ * Turns logged days into sourced, actionable guidance.
  *
- * Pure logic on purpose: no Android imports, no clock reads, no I/O. `today` is
- * passed in so every rule is deterministic and testable.
+ * Pure logic: no Android imports, no clock reads, no I/O. `today` is passed in so
+ * every rule is deterministic and testable.
  */
 object GuidanceEngine {
 
     /** ADA 2026: at least 150 min/week moderate-to-vigorous aerobic activity. */
     const val WEEKLY_AEROBIC_TARGET_MIN = 150
 
-    /** ADA 2026: activity spread over at least 3 days per week. */
+    /** ADA 2026: spread over at least 3 days per week. */
     const val MIN_ACTIVE_DAYS_PER_WEEK = 3
 
     /** ADA 2026: never more than 2 consecutive days without activity. */
@@ -39,33 +38,37 @@ object GuidanceEngine {
     /** ADA 2026: 2-3 resistance sessions per week on nonconsecutive days. */
     const val WEEKLY_STRENGTH_TARGET_SESSIONS = 2
 
-    /**
-     * An app heuristic, not a guideline. Published sedentary-behaviour guidance
-     * is directional ("sit less") rather than numeric, so this threshold is ours
-     * and is labelled as such wherever the tip appears.
-     */
-    const val LOW_STEP_DAY_THRESHOLD = 6_000
+    /** ACSM: at least 48 hours before working the same muscle group again. */
+    const val STRENGTH_REST_HOURS = 48
 
-    /** Ditto — the fatigue/soreness pair that suggests a sustained hard patch. */
-    const val SUSTAINED_STRAIN_SCORE = 7
-    const val SUSTAINED_STRAIN_DAYS = 3
+    /** AASM/SRS consensus: 7 or more hours a night for adults. */
+    const val SLEEP_TARGET_HOURS = 7
+
+    /** Ours, not a guideline — where "sore enough to ease off" sits on the 0-10 scale. */
+    const val HIGH_SORENESS = 6
+    const val SUSTAINED_FATIGUE = 7
+    const val SUSTAINED_FATIGUE_DAYS = 3
+
+    /** Ours — step count below which a day reads as mostly sitting. */
+    const val LOW_STEP_DAY = 6_000
+
+    /** Ours — how far above the 28-day baseline counts as a spike. */
+    const val LOAD_SPIKE_PERCENT = 30
 
     const val WINDOW_DAYS = 7
     private const val SHORT_WINDOW_DAYS = 3
 
-    fun evaluate(history: List<DayRecord>, todayEpochDay: Long): GuidanceResult {
+    fun evaluate(history: List<DayRecord>, todayEpochDay: Long, loadPercentAboveBaseline: Int = 0): GuidanceResult {
         val window = history
             .filter { it.epochDay in (todayEpochDay - WINDOW_DAYS + 1)..todayEpochDay }
             .sortedBy { it.epochDay }
 
-        val daysLogged = window.size
         val weeklyAerobic = window.sumOf { it.aerobicMinutes }
         val activeDays = window.count { it.aerobicMinutes > 0 }
         val strengthSessions = window.count { it.didStrength }
 
-        val tips = buildList {
+        val insights = buildList {
             twoDayGap(window, todayEpochDay)?.let(::add)
-            sustainedStrain(window)?.let(::add)
             weeklyMinutes(window, weeklyAerobic)?.let(::add)
             spread(window, weeklyAerobic, activeDays)?.let(::add)
             resistance(window, strengthSessions)?.let(::add)
@@ -73,158 +76,209 @@ object GuidanceEngine {
             add(postMealWalk())
         }
 
+        val recovery = buildList {
+            strengthTooClose(window)?.let(::add)
+            highSoreness(window)?.let(::add)
+            sustainedFatigue(window)?.let(::add)
+            loadSpike(loadPercentAboveBaseline)?.let(::add)
+            add(varyTheStimulus())
+            add(sleepBaseline())
+        }
+
         return GuidanceResult(
-            daysLogged = daysLogged,
+            daysLogged = window.size,
             weeklyAerobicMinutes = weeklyAerobic,
             weeklyAerobicTargetMinutes = WEEKLY_AEROBIC_TARGET_MIN,
             activeDays = activeDays,
             strengthSessions = strengthSessions,
-            tips = rank(tips, todayEpochDay),
-            daysUntilFullGuidance = (WINDOW_DAYS - daysLogged).coerceAtLeast(0),
+            weeklyStrengthTarget = WEEKLY_STRENGTH_TARGET_SESSIONS,
+            daysUntilFullGuidance = (WINDOW_DAYS - window.size).coerceAtLeast(0),
+            insights = insights.sortedByDescending { it.severity.ordinal },
+            recovery = recovery.sortedByDescending { it.severity.ordinal },
         )
     }
 
-    /**
-     * At most two tips on screen. Severity decides first; within a severity the
-     * order rotates by date so a single tip cannot pin the card forever.
-     */
-    private fun rank(tips: List<Tip>, todayEpochDay: Long): List<Tip> {
-        if (tips.isEmpty()) return emptyList()
-        return tips
-            .sortedWith(
-                compareByDescending<Tip> { it.severity.ordinal }
-                    .thenBy { (it.id.ordinal + todayEpochDay) % tips.size },
-            )
-            .take(MAX_VISIBLE_TIPS)
-    }
-
-    const val MAX_VISIBLE_TIPS = 2
-
-    // ---- Rules ------------------------------------------------------------
+    // ---- Insights ---------------------------------------------------------
 
     private fun weeklyMinutes(window: List<DayRecord>, weeklyAerobic: Int): Tip? {
         if (window.size < WINDOW_DAYS) return null
         return if (weeklyAerobic < WEEKLY_AEROBIC_TARGET_MIN) {
             Tip(
                 id = TipId.WEEKLY_MINUTES_BEHIND,
-                title = "${WEEKLY_AEROBIC_TARGET_MIN - weeklyAerobic} min short this week",
-                body = "You logged $weeklyAerobic of $WEEKLY_AEROBIC_TARGET_MIN minutes. " +
-                    "Guidance for adults with type 2 diabetes is at least $WEEKLY_AEROBIC_TARGET_MIN minutes " +
-                    "of moderate activity a week. Intensity is not measured here, so this counts every " +
-                    "logged walk and swim minute as moderate.",
+                category = TipCategory.INSIGHT,
+                title = "${WEEKLY_AEROBIC_TARGET_MIN - weeklyAerobic} minutes short this week",
+                body = "You logged $weeklyAerobic of $WEEKLY_AEROBIC_TARGET_MIN minutes. Roughly " +
+                    "${((WEEKLY_AEROBIC_TARGET_MIN - weeklyAerobic) / 7.0).toInt() + 1} extra minutes " +
+                    "a day closes it. Walk and swim minutes are counted as moderate — intensity is not measured.",
                 severity = TipSeverity.SUGGESTION,
                 source = TipSources.ADA_2026,
             )
         } else {
             Tip(
                 id = TipId.WEEKLY_MINUTES_MET,
-                title = "Weekly target met",
-                body = "$weeklyAerobic minutes logged against a $WEEKLY_AEROBIC_TARGET_MIN minute target. " +
-                    "Benefit keeps accruing above this, but there is no need to chase a bigger number.",
+                category = TipCategory.INSIGHT,
+                title = "Weekly target cleared",
+                body = "$weeklyAerobic minutes against a $WEEKLY_AEROBIC_TARGET_MIN minute target. " +
+                    "Benefit keeps accruing up to about 300 minutes, but there is nothing to chase here.",
                 severity = TipSeverity.INFO,
-                source = "${TipSources.ADA_2026}; ${TipSources.WHO_2020}",
+                source = "${TipSources.ADA_2026} · ${TipSources.WHO_2020}",
             )
         }
     }
 
     private fun spread(window: List<DayRecord>, weeklyAerobic: Int, activeDays: Int): Tip? {
-        if (window.size < WINDOW_DAYS) return null
-        if (weeklyAerobic < WEEKLY_AEROBIC_TARGET_MIN) return null
+        if (window.size < WINDOW_DAYS || weeklyAerobic < WEEKLY_AEROBIC_TARGET_MIN) return null
         if (activeDays >= MIN_ACTIVE_DAYS_PER_WEEK) return null
         return Tip(
             id = TipId.SPREAD_TOO_NARROW,
-            title = "Try spreading it wider",
-            body = "You hit the weekly minutes across only $activeDays " +
-                "${if (activeDays == 1) "day" else "days"}. Guidance is to spread activity over at " +
-                "least $MIN_ACTIVE_DAYS_PER_WEEK days a week rather than concentrating it.",
+            category = TipCategory.INSIGHT,
+            title = "All of it landed on $activeDays ${if (activeDays == 1) "day" else "days"}",
+            body = "You hit the minutes, but concentrated. Spreading the same volume over at least " +
+                "$MIN_ACTIVE_DAYS_PER_WEEK days gives better glucose control than stacking it.",
             severity = TipSeverity.SUGGESTION,
             source = TipSources.ADA_2026,
         )
     }
 
     /**
-     * Scans real calendar days, so a day with no record counts as inactive —
-     * but only from the first logged day onward. Days before the user started
-     * logging are unknown, not inactive.
+     * Counts real calendar days, so a day with no record is inactive — but only
+     * from the first logged day onward. Days before you started logging are
+     * unknown, not skipped.
      */
     private fun twoDayGap(window: List<DayRecord>, todayEpochDay: Long): Tip? {
         val first = window.firstOrNull() ?: return null
-        val activeDays = window.filter { it.aerobicMinutes > 0 }.map { it.epochDay }.toSet()
-
+        val active = window.filter { it.aerobicMinutes > 0 }.map { it.epochDay }.toSet()
         var run = 0
         for (day in first.epochDay..todayEpochDay) {
-            run = if (day in activeDays) 0 else run + 1
+            run = if (day in active) 0 else run + 1
         }
         if (run < MAX_CONSECUTIVE_INACTIVE_DAYS) return null
-
         return Tip(
             id = TipId.TWO_DAY_GAP,
+            category = TipCategory.INSIGHT,
             title = "$run days without logged activity",
-            body = "Guidance is to go no more than $MAX_CONSECUTIVE_INACTIVE_DAYS consecutive days " +
-                "without activity. Even a short easy walk restarts the clock.",
-            severity = TipSeverity.ATTENTION,
+            body = "Guidance is no more than $MAX_CONSECUTIVE_INACTIVE_DAYS consecutive days off. " +
+                "A short easy walk today restarts the clock.",
+            severity = TipSeverity.PRIORITY,
             source = TipSources.ADA_2026,
         )
     }
 
     private fun resistance(window: List<DayRecord>, strengthSessions: Int): Tip? {
-        if (window.size < WINDOW_DAYS) return null
-        if (strengthSessions >= WEEKLY_STRENGTH_TARGET_SESSIONS) return null
+        if (window.size < WINDOW_DAYS || strengthSessions >= WEEKLY_STRENGTH_TARGET_SESSIONS) return null
         return Tip(
             id = TipId.RESISTANCE_MISSING,
-            title = "No strength work logged",
-            body = "Guidance is $WEEKLY_STRENGTH_TARGET_SESSIONS-3 resistance sessions a week on " +
-                "nonconsecutive days. Combined aerobic and resistance work improves glucose control " +
-                "more than either on its own.",
+            category = TipCategory.INSIGHT,
+            title = if (strengthSessions == 0) "No strength work this week" else "One strength session this week",
+            body = "Target is $WEEKLY_STRENGTH_TARGET_SESSIONS-3 sessions a week on nonconsecutive days. " +
+                "Aerobic plus resistance beats either alone for glucose control, blood pressure and strength.",
             severity = TipSeverity.SUGGESTION,
-            source = "${TipSources.ADA_2026}; ${TipSources.ADA_POSITION_2016}",
+            source = "${TipSources.ADA_2026} · ${TipSources.ADA_POSITION_2016}",
         )
     }
 
     private fun sittingBreaks(window: List<DayRecord>): Tip? {
         if (window.size < SHORT_WINDOW_DAYS) return null
         val recent = window.takeLast(SHORT_WINDOW_DAYS)
-        val lowStepDays = recent.count { it.activity.steps < LOW_STEP_DAY_THRESHOLD }
-        if (lowStepDays < 2) return null
+        val lowDays = recent.count { it.activity.steps < LOW_STEP_DAY }
+        if (lowDays < 2) return null
         return Tip(
             id = TipId.SITTING_BREAKS,
-            title = "Long sitting stretches likely",
-            body = "Step counts have been low on $lowStepDays of the last $SHORT_WINDOW_DAYS days. " +
-                "Breaking up long sitting with short walks lowers post-meal glucose — walking breaks " +
-                "work better than simply standing, and the effect is largest in type 2 diabetes.",
+            category = TipCategory.INSIGHT,
+            title = "Low step days: $lowDays of the last $SHORT_WINDOW_DAYS",
+            body = "Breaking long sitting with short walks lowers post-meal glucose. Walking breaks beat " +
+                "standing, and the effect is largest in type 2 diabetes.",
             severity = TipSeverity.SUGGESTION,
-            source = "${TipSources.SITTING_META_2025}. Low-step threshold: ${TipSources.APP_HEURISTIC}",
+            source = "${TipSources.SITTING_META_2025} · threshold: ${TipSources.APP_RULE}",
         )
     }
 
     private fun postMealWalk() = Tip(
         id = TipId.POST_MEAL_WALK,
-        title = "Short walks after meals",
-        body = "Three 15-minute walks after meals improved 24-hour glucose control more than one " +
-            "45-minute walk in a trial of older adults at risk of impaired glucose tolerance. " +
-            "Timing matters as much as total duration.",
+        category = TipCategory.INSIGHT,
+        title = "Time walks to your meals",
+        body = "Three 15-minute walks after meals improved 24-hour glucose control more than a single " +
+            "45-minute walk. Same total time, better result.",
         severity = TipSeverity.INFO,
         source = TipSources.POSTMEAL_2013,
     )
 
-    /**
-     * This one is ours, not a clinical rule, and says so. It never interprets a
-     * symptom — it points at a clinician and stops.
-     */
-    private fun sustainedStrain(window: List<DayRecord>): Tip? {
-        if (window.size < SUSTAINED_STRAIN_DAYS) return null
-        val recent = window.takeLast(SUSTAINED_STRAIN_DAYS)
-        val allStrained = recent.all {
-            it.fatigue >= SUSTAINED_STRAIN_SCORE && it.soreness >= SUSTAINED_STRAIN_SCORE
-        }
-        if (!allStrained) return null
+    // ---- Recovery ---------------------------------------------------------
+
+    private fun strengthTooClose(window: List<DayRecord>): Tip? {
+        val strengthDays = window.filter { it.didStrength }.map { it.epochDay }.sorted()
+        val backToBack = strengthDays.zipWithNext().any { (a, b) -> b - a == 1L }
+        if (!backToBack) return null
         return Tip(
-            id = TipId.SUSTAINED_FATIGUE,
-            title = "Fatigue and soreness both high for $SUSTAINED_STRAIN_DAYS days",
-            body = "That is a longer stretch than usual. If it does not settle with easier days, " +
-                "it is worth raising with your doctor. This app does not interpret symptoms.",
-            severity = TipSeverity.ATTENTION,
-            source = TipSources.APP_HEURISTIC,
+            id = TipId.STRENGTH_TOO_CLOSE,
+            category = TipCategory.RECOVERY,
+            title = "Strength sessions on back-to-back days",
+            body = "Leave at least $STRENGTH_REST_HOURS hours before working the same muscle group again. " +
+                "If you want consecutive days, alternate what you train.",
+            severity = TipSeverity.PRIORITY,
+            source = TipSources.ACSM_RECOVERY,
         )
     }
+
+    private fun highSoreness(window: List<DayRecord>): Tip? {
+        val latest = window.lastOrNull() ?: return null
+        if (latest.soreness < HIGH_SORENESS) return null
+        return Tip(
+            id = TipId.HIGH_SORENESS,
+            category = TipCategory.RECOVERY,
+            title = "Soreness at ${latest.soreness}/10",
+            body = "Delayed soreness usually peaks 24-48 hours after a harder session and settles on its " +
+                "own. Keep moving — easy walking or swimming rather than a repeat of what caused it.",
+            severity = TipSeverity.PRIORITY,
+            source = "${TipSources.ACSM_RECOVERY} · threshold: ${TipSources.APP_RULE}",
+        )
+    }
+
+    private fun sustainedFatigue(window: List<DayRecord>): Tip? {
+        if (window.size < SUSTAINED_FATIGUE_DAYS) return null
+        val recent = window.takeLast(SUSTAINED_FATIGUE_DAYS)
+        if (!recent.all { it.fatigue >= SUSTAINED_FATIGUE }) return null
+        return Tip(
+            id = TipId.SUSTAINED_FATIGUE,
+            category = TipCategory.RECOVERY,
+            title = "Fatigue above $SUSTAINED_FATIGUE for $SUSTAINED_FATIGUE_DAYS days running",
+            body = "That is a longer stretch than a normal training response. Pull the next few days back " +
+                "to easy volume and let it reset before pushing again.",
+            severity = TipSeverity.PRIORITY,
+            source = TipSources.APP_RULE,
+        )
+    }
+
+    private fun loadSpike(loadPercentAboveBaseline: Int): Tip? {
+        if (loadPercentAboveBaseline <= LOAD_SPIKE_PERCENT) return null
+        return Tip(
+            id = TipId.LOAD_SPIKE,
+            category = TipCategory.RECOVERY,
+            title = "Load is $loadPercentAboveBaseline% above your baseline",
+            body = "A jump this size is where niggles start. Hold this volume for a week before adding " +
+                "more, rather than stacking another increase on top.",
+            severity = TipSeverity.SUGGESTION,
+            source = TipSources.APP_RULE,
+        )
+    }
+
+    private fun varyTheStimulus() = Tip(
+        id = TipId.VARY_THE_STIMULUS,
+        category = TipCategory.RECOVERY,
+        title = "Rotate what you train",
+        body = "Avoid the same type of session on consecutive days. Alternating muscle groups or swapping " +
+            "walking for swimming lets tissue rebuild while you still train.",
+        severity = TipSeverity.INFO,
+        source = TipSources.ACSM_RECOVERY,
+    )
+
+    private fun sleepBaseline() = Tip(
+        id = TipId.SLEEP_BASELINE,
+        category = TipCategory.RECOVERY,
+        title = "$SLEEP_TARGET_HOURS+ hours is the recovery floor",
+        body = "Sleep is where the adaptation actually happens. The adult consensus is $SLEEP_TARGET_HOURS " +
+            "or more hours a night on a regular basis — short nights blunt everything else you do here.",
+        severity = TipSeverity.INFO,
+        source = TipSources.AASM_2015,
+    )
 }

@@ -176,17 +176,6 @@ class RecoveryViewModel(application: Application) : AndroidViewModel(application
         }
     }
 
-    /**
-     * Fills the archive with generated days so guidance can be exercised without
-     * a month of real logging. Debug builds only — the caller checks
-     * `BuildConfig.DEBUG`. Today's working state is left untouched.
-     */
-    fun seedSampleHistory() {
-        val seeded = DebugSeed.history(LocalDate.now())
-        history = seeded
-        viewModelScope.launch { store.replaceHistory(seeded) }
-    }
-
     // ---- Recommendation ------------------------------------------------
 
     /**
@@ -263,7 +252,7 @@ class RecoveryViewModel(application: Application) : AndroidViewModel(application
     // ---- Guidance ----------------------------------------------------------
 
     val guidance: GuidanceResult
-        get() = GuidanceEngine.evaluate(series, currentDay.toEpochDay())
+        get() = GuidanceEngine.evaluate(series, currentDay.toEpochDay(), loadPercentAboveBaseline)
 
     // ---- Week / trends (derived from the real archive) ---------------------
 

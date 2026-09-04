@@ -29,6 +29,8 @@ import com.recoverycoach.app.ui.components.RecoveryCard
 import com.recoverycoach.app.ui.components.RowDivider
 import com.recoverycoach.app.ui.components.SectionEyebrow
 import com.recoverycoach.app.ui.components.StatRow
+import com.recoverycoach.app.ui.effects.BlurIn
+import com.recoverycoach.app.ui.effects.ShinyText
 import com.recoverycoach.app.ui.theme.RecoveryColors
 import com.recoverycoach.app.ui.theme.RecoveryMotion
 import com.recoverycoach.app.ui.theme.RecoveryType
@@ -49,7 +51,9 @@ fun WeekScreen(viewModel: RecoveryViewModel, modifier: Modifier = Modifier) {
         if (viewModel.weekDays.isEmpty()) {
             EmptyHistoryCard()
         } else {
-            viewModel.weekDays.forEach { day -> DailyDetailCard(day) }
+            viewModel.weekDays.forEachIndexed { index, day ->
+                BlurIn(delayMs = index * 55) { DailyDetailCard(day) }
+            }
         }
     }
 }
@@ -58,7 +62,12 @@ fun WeekScreen(viewModel: RecoveryViewModel, modifier: Modifier = Modifier) {
 private fun Header() {
     Column {
         SectionEyebrow("Trends")
-        Text("Your last seven days", style = RecoveryType.screenTitle, color = RecoveryColors.TextPrimary)
+        ShinyText(
+            text = "Your last seven days",
+            style = RecoveryType.screenTitle,
+            baseColor = RecoveryColors.TextPrimary,
+            highlightColor = RecoveryColors.Primary,
+        )
         Text(
             "Compare against your own routine, not a generic leaderboard.",
             style = RecoveryType.screenSubtitle,

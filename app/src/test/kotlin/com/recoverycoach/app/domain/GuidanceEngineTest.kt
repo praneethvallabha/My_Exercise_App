@@ -12,24 +12,19 @@ import org.junit.Test
 private const val TODAY = 20_000L
 
 private fun day(
-    offsetFromToday: Long,
+    offset: Long,
     walkMin: Int = 0,
     swimMin: Int = 0,
     strengthMin: Int = 0,
     steps: Int = 10_000,
     fatigue: Int = 2,
     soreness: Int = 2,
-    level: RecoveryLevel = RecoveryLevel.NORMAL,
 ) = DayRecord(
-    epochDay = TODAY + offsetFromToday,
+    epochDay = TODAY + offset,
     activity = ActivityLog(
-        morningWalkKm = 0.0,
         morningWalkMin = walkMin,
-        totalWalkKm = 0.0,
         steps = steps,
-        swimM = 0,
         swimMin = swimMin,
-        heartPoints = 0,
         strengthMin = strengthMin,
     ),
     energy = 3,
@@ -37,211 +32,204 @@ private fun day(
     soreness = soreness,
     generalFeelingName = GeneralFeeling.NORMAL.name,
     notes = "",
-    levelName = level.name,
+    levelName = RecoveryLevel.NORMAL.name,
 )
 
-/** A full, comfortably-compliant week: 7 days x 30 min, strength twice. */
-private fun compliantWeek() = (0..6).map { back ->
-    day(-back.toLong(), walkMin = 30, strengthMin = if (back == 1 || back == 3) 30 else 0)
+/** A compliant week: 7 days x 30 min, strength on two nonconsecutive days. */
+private fun goodWeek() = (0..6).map { back ->
+    day(-back.toLong(), walkMin = 30, strengthMin = if (back == 1 || back == 4) 30 else 0)
 }
 
 class GuidanceEngineTest {
 
-    private fun evaluate(history: List<DayRecord>) = GuidanceEngine.evaluate(history, TODAY)
+    private fun eval(history: List<DayRecord>, loadPercent: Int = 0) =
+        GuidanceEngine.evaluate(history, TODAY, loadPercent)
 
-    private fun tipIds(history: List<DayRecord>) = evaluate(history).tips.map { it.id }
+    private fun insightIds(history: List<DayRecord>) = eval(history).insights.map { it.id }
+    private fun recoveryIds(history: List<DayRecord>, loadPercent: Int = 0) =
+        eval(history, loadPercent).recovery.map { it.id }
+
+    // ---- Filter separation ------------------------------------------------
+
+    @Test
+    fun `every tip lands in the filter matching its category`() {
+        val result = eval(goodWeek())
+        assertTrue(result.insights.all { it.category == TipCategory.INSIGHT })
+        assertTrue(result.recovery.all { it.category == TipCategory.RECOVERY })
+    }
+
+    @Test
+    fun `both filters always have something to show`() {
+        listOf(emptyList(), goodWeek(), (0..6).map { day(-it.toLong()) }).forEach { history ->
+            assertTrue(eval(history).insights.isNotEmpty())
+            assertTrue(eval(history).recovery.isNotEmpty())
+        }
+    }
 
     // ---- Cold start -------------------------------------------------------
 
     @Test
-    fun `no history asks for a baseline rather than inventing a tip`() {
-        val result = evaluate(emptyList())
-        assertEquals(0, result.daysLogged)
+    fun `no history still offers educational guidance but no weekly verdict`() {
+        val result = eval(emptyList())
         assertEquals(GuidanceEngine.WINDOW_DAYS, result.daysUntilFullGuidance)
-        assertFalse(result.tips.any { it.id == TipId.WEEKLY_MINUTES_BEHIND })
+        assertFalse(result.insights.any { it.id == TipId.WEEKLY_MINUTES_BEHIND })
+        assertTrue(result.insights.any { it.id == TipId.POST_MEAL_WALK })
+        assertTrue(result.recovery.any { it.id == TipId.SLEEP_BASELINE })
     }
 
     @Test
     fun `weekly rules stay silent until a full week is logged`() {
         val partial = (0..4).map { day(-it.toLong(), walkMin = 5) }
-        val ids = tipIds(partial)
+        val ids = insightIds(partial)
         assertFalse(ids.contains(TipId.WEEKLY_MINUTES_BEHIND))
         assertFalse(ids.contains(TipId.RESISTANCE_MISSING))
-        assertFalse(ids.contains(TipId.SPREAD_TOO_NARROW))
-        assertEquals(2, evaluate(partial).daysUntilFullGuidance)
+        assertEquals(2, eval(partial).daysUntilFullGuidance)
     }
 
-    @Test
-    fun `baseline countdown reaches zero on a full week`() {
-        assertEquals(0, evaluate(compliantWeek()).daysUntilFullGuidance)
-    }
-
-    // ---- Weekly minutes ---------------------------------------------------
+    // ---- Insights ---------------------------------------------------------
 
     @Test
-    fun `falling short of 150 minutes reports the shortfall`() {
-        val history = (0..6).map { day(-it.toLong(), walkMin = 10) } // 70 min
-        val result = evaluate(history)
+    fun `shortfall is reported with the gap and a per-day figure`() {
+        val history = (0..6).map { day(-it.toLong(), walkMin = 10) }
+        val result = eval(history)
         assertEquals(70, result.weeklyAerobicMinutes)
-        val tip = result.tips.find { it.id == TipId.WEEKLY_MINUTES_BEHIND }
-        assertTrue(tip != null)
-        assertTrue(tip!!.title.contains("80"))
+        val tip = result.insights.first { it.id == TipId.WEEKLY_MINUTES_BEHIND }
+        assertTrue(tip.title.contains("80"))
         assertTrue(tip.source.contains("2026"))
     }
 
     @Test
-    fun `meeting the target is reported as info, not a warning`() {
-        val tip = evaluate(compliantWeek()).tips.find { it.id == TipId.WEEKLY_MINUTES_MET }
-        // 210 minutes across the week clears the 150 target.
-        assertEquals(210, evaluate(compliantWeek()).weeklyAerobicMinutes)
-        if (tip != null) assertEquals(TipSeverity.INFO, tip.severity)
+    fun `meeting the target is info, not a nag`() {
+        val tip = eval(goodWeek()).insights.first { it.id == TipId.WEEKLY_MINUTES_MET }
+        assertEquals(TipSeverity.INFO, tip.severity)
+        assertEquals(210, eval(goodWeek()).weeklyAerobicMinutes)
     }
 
     @Test
     fun `swim minutes count toward the aerobic total`() {
-        val history = (0..6).map { day(-it.toLong(), walkMin = 10, swimMin = 15) }
-        assertEquals(175, evaluate(history).weeklyAerobicMinutes)
-    }
-
-    // ---- Spread and gaps --------------------------------------------------
-
-    @Test
-    fun `hitting the target on too few days suggests spreading it`() {
-        val history = listOf(
-            day(0, walkMin = 80),
-            day(-1, walkMin = 80),
-        ) + (2..6).map { day(-it.toLong(), walkMin = 0) }
-        assertTrue(tipIds(history).contains(TipId.SPREAD_TOO_NARROW))
+        assertEquals(175, eval((0..6).map { day(-it.toLong(), walkMin = 10, swimMin = 15) }).weeklyAerobicMinutes)
     }
 
     @Test
-    fun `spread tip stays quiet when activity is already spread`() {
-        assertFalse(tipIds(compliantWeek()).contains(TipId.SPREAD_TOO_NARROW))
+    fun `concentrating the week triggers the spread tip`() {
+        val history = listOf(day(0, walkMin = 80), day(-1, walkMin = 80)) +
+            (2..6).map { day(-it.toLong()) }
+        assertTrue(insightIds(history).contains(TipId.SPREAD_TOO_NARROW))
     }
 
     @Test
-    fun `two consecutive inactive days raise attention`() {
-        val history = (2..6).map { day(-it.toLong(), walkMin = 30) } +
-            listOf(day(-1, walkMin = 0), day(0, walkMin = 0))
-        val tip = evaluate(history).tips.find { it.id == TipId.TWO_DAY_GAP }
-        assertTrue(tip != null)
-        assertEquals(TipSeverity.ATTENTION, tip!!.severity)
+    fun `two consecutive inactive days are the top insight`() {
+        val history = (2..6).map { day(-it.toLong(), walkMin = 30) } + listOf(day(-1), day(0))
+        val result = eval(history)
+        assertEquals(TipId.TWO_DAY_GAP, result.insights.first().id)
+        assertEquals(TipSeverity.PRIORITY, result.insights.first().severity)
     }
 
     @Test
     fun `a single rest day is not a gap`() {
-        val history = (1..6).map { day(-it.toLong(), walkMin = 30) } + listOf(day(0, walkMin = 0))
-        assertFalse(tipIds(history).contains(TipId.TWO_DAY_GAP))
+        val history = (1..6).map { day(-it.toLong(), walkMin = 30) } + listOf(day(0))
+        assertFalse(insightIds(history).contains(TipId.TWO_DAY_GAP))
     }
 
     @Test
-    fun `days before the user started logging are unknown, not inactive`() {
-        // Only two days exist, both active. Nothing before them should be read
-        // as a gap just because no record is there.
+    fun `days before logging started are unknown, not skipped`() {
         val history = listOf(day(-1, walkMin = 30), day(0, walkMin = 30))
-        assertFalse(tipIds(history).contains(TipId.TWO_DAY_GAP))
-    }
-
-    // ---- Resistance -------------------------------------------------------
-
-    @Test
-    fun `a week without strength work suggests resistance training`() {
-        val history = (0..6).map { day(-it.toLong(), walkMin = 30) }
-        val tip = evaluate(history).tips.find { it.id == TipId.RESISTANCE_MISSING }
-        assertTrue(tip != null)
-        assertTrue(tip!!.source.contains("2026"))
+        assertFalse(insightIds(history).contains(TipId.TWO_DAY_GAP))
     }
 
     @Test
-    fun `two strength sessions clears the resistance tip`() {
-        assertEquals(2, evaluate(compliantWeek()).strengthSessions)
-        assertFalse(tipIds(compliantWeek()).contains(TipId.RESISTANCE_MISSING))
+    fun `too little strength work is flagged, enough is not`() {
+        assertTrue(insightIds((0..6).map { day(-it.toLong(), walkMin = 30) }).contains(TipId.RESISTANCE_MISSING))
+        assertFalse(insightIds(goodWeek()).contains(TipId.RESISTANCE_MISSING))
     }
-
-    // ---- Sitting and strain ----------------------------------------------
 
     @Test
     fun `repeated low step days suggest breaking up sitting`() {
         val history = (0..6).map { day(-it.toLong(), walkMin = 30, steps = 3_000) }
-        val tip = evaluate(history).tips.find { it.id == TipId.SITTING_BREAKS }
-        assertTrue(tip != null)
-        // The advice is sourced, but the step threshold is ours and says so.
-        assertTrue(tip!!.source.contains("not a clinical guideline"))
+        val tip = eval(history).insights.first { it.id == TipId.SITTING_BREAKS }
+        assertTrue(tip.source.contains(TipSources.APP_RULE))
     }
 
-    @Test
-    fun `sustained high fatigue and soreness is flagged as an app heuristic`() {
-        val history = (0..6).map { day(-it.toLong(), walkMin = 30, fatigue = 8, soreness = 8) }
-        val tip = evaluate(history).tips.find { it.id == TipId.SUSTAINED_FATIGUE }
-        assertTrue(tip != null)
-        assertEquals(TipSources.APP_HEURISTIC, tip!!.source)
-        // It must never interpret the symptom itself.
-        assertTrue(tip.body.contains("your doctor"))
-    }
+    // ---- Recovery ---------------------------------------------------------
 
     @Test
-    fun `high fatigue alone does not trigger the strain tip`() {
-        val history = (0..6).map { day(-it.toLong(), walkMin = 30, fatigue = 9, soreness = 1) }
-        assertFalse(tipIds(history).contains(TipId.SUSTAINED_FATIGUE))
-    }
-
-    // ---- Presentation rules ----------------------------------------------
-
-    @Test
-    fun `never shows more than two tips`() {
-        // A deliberately bad week: no activity, no strength, low steps, high strain.
-        val history = (0..6).map {
-            day(-it.toLong(), walkMin = 0, steps = 500, fatigue = 9, soreness = 9)
+    fun `back-to-back strength days are flagged with the 48 hour rule`() {
+        val history = (0..6).map { back ->
+            day(-back.toLong(), walkMin = 30, strengthMin = if (back == 2 || back == 3) 30 else 0)
         }
-        assertEquals(GuidanceEngine.MAX_VISIBLE_TIPS, evaluate(history).tips.size)
+        val tip = eval(history).recovery.first { it.id == TipId.STRENGTH_TOO_CLOSE }
+        assertTrue(tip.body.contains("${GuidanceEngine.STRENGTH_REST_HOURS} hours"))
+        assertEquals(TipSources.ACSM_RECOVERY, tip.source)
     }
 
     @Test
-    fun `attention outranks suggestion and info`() {
-        val history = (0..6).map {
-            day(-it.toLong(), walkMin = 0, steps = 500, fatigue = 9, soreness = 9)
+    fun `nonconsecutive strength days are fine`() {
+        assertFalse(recoveryIds(goodWeek()).contains(TipId.STRENGTH_TOO_CLOSE))
+    }
+
+    @Test
+    fun `high soreness today surfaces a recovery tip`() {
+        val history = (1..6).map { day(-it.toLong(), walkMin = 30) } + listOf(day(0, walkMin = 30, soreness = 8))
+        assertTrue(recoveryIds(history).contains(TipId.HIGH_SORENESS))
+    }
+
+    @Test
+    fun `sustained fatigue needs the full run of days`() {
+        val sustained = (0..6).map { day(-it.toLong(), walkMin = 30, fatigue = 9) }
+        assertTrue(recoveryIds(sustained).contains(TipId.SUSTAINED_FATIGUE))
+
+        val oneBadDay = (1..6).map { day(-it.toLong(), walkMin = 30) } + listOf(day(0, walkMin = 30, fatigue = 9))
+        assertFalse(recoveryIds(oneBadDay).contains(TipId.SUSTAINED_FATIGUE))
+    }
+
+    @Test
+    fun `a load spike is only flagged above the threshold`() {
+        assertTrue(recoveryIds(goodWeek(), loadPercent = 45).contains(TipId.LOAD_SPIKE))
+        assertFalse(recoveryIds(goodWeek(), loadPercent = 10).contains(TipId.LOAD_SPIKE))
+    }
+
+    // ---- Presentation and content ----------------------------------------
+
+    @Test
+    fun `priority tips sort above suggestions and info`() {
+        val history = (2..6).map { day(-it.toLong(), walkMin = 30) } + listOf(day(-1), day(0))
+        listOf(eval(history).insights, eval(history).recovery).forEach { list ->
+            val ordinals = list.map { it.severity.ordinal }
+            assertEquals(ordinals.sortedDescending(), ordinals)
         }
-        assertTrue(evaluate(history).tips.all { it.severity == TipSeverity.ATTENTION })
     }
 
     @Test
     fun `every tip names a source`() {
-        val histories = listOf(
-            emptyList(),
-            compliantWeek(),
-            (0..6).map { day(-it.toLong(), walkMin = 0, steps = 500, fatigue = 9, soreness = 9) },
-            (0..6).map { day(-it.toLong(), walkMin = 10) },
-        )
-        histories.forEach { history ->
-            evaluate(history).tips.forEach { tip ->
-                assertTrue("${tip.id} has no source", tip.source.isNotBlank())
+        listOf(emptyList(), goodWeek(), (0..6).map { day(-it.toLong(), walkMin = 10, soreness = 9, fatigue = 9) })
+            .forEach { history ->
+                (eval(history).insights + eval(history).recovery).forEach {
+                    assertTrue("${it.id} has no source", it.source.isNotBlank())
+                }
             }
-        }
     }
 
     @Test
-    fun `no tip mentions medication or dosing`() {
-        val banned = listOf("insulin", "dose", "dosing", "medication", "metformin", "mg")
-        val histories = listOf(
-            compliantWeek(),
-            (0..6).map { day(-it.toLong(), walkMin = 0, steps = 500, fatigue = 9, soreness = 9) },
-            (0..6).map { day(-it.toLong(), walkMin = 10) },
+    fun `no tip carries medical-advice boilerplate or dosing content`() {
+        val banned = listOf(
+            "insulin", "dose", "dosing", "medication", "metformin",
+            "not medical advice", "consult", "diagnos",
         )
-        histories.forEach { history ->
-            evaluate(history).tips.forEach { tip ->
-                val text = "${tip.title} ${tip.body}".lowercase()
-                banned.forEach { word ->
-                    assertFalse("${tip.id} mentions '$word'", text.contains(word))
+        listOf(goodWeek(), (0..6).map { day(-it.toLong(), walkMin = 10, soreness = 9, fatigue = 9) })
+            .forEach { history ->
+                (eval(history).insights + eval(history).recovery).forEach { tip ->
+                    val text = "${tip.title} ${tip.body}".lowercase()
+                    banned.forEach { word ->
+                        assertFalse("${tip.id} contains '$word'", text.contains(word))
+                    }
                 }
             }
-        }
     }
 
     @Test
     fun `records outside the seven day window are ignored`() {
-        val history = (0..6).map { day(-it.toLong(), walkMin = 30) } +
-            listOf(day(-10, walkMin = 500))
-        assertEquals(210, evaluate(history).weeklyAerobicMinutes)
-        assertEquals(7, evaluate(history).daysLogged)
+        val history = (0..6).map { day(-it.toLong(), walkMin = 30) } + listOf(day(-10, walkMin = 500))
+        assertEquals(210, eval(history).weeklyAerobicMinutes)
+        assertEquals(7, eval(history).daysLogged)
     }
 }

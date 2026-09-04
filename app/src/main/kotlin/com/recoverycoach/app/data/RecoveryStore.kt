@@ -142,17 +142,6 @@ class RecoveryStore(context: Context) {
         }
     }
 
-    /**
-     * Replaces the whole archive. Only the debug seeder uses this — normal use
-     * goes through [upsertDay], which preserves what is already filed.
-     */
-    suspend fun replaceHistory(records: List<DayRecord>) {
-        dataStore.edit { prefs ->
-            val trimmed = records.sortedBy { it.epochDay }.takeLast(RETENTION_DAYS)
-            prefs[Keys.HISTORY_JSON] = json.encodeToString(ListSerializer(DayRecord.serializer()), trimmed)
-        }
-    }
-
     /** Clears the working day only. The history archive is untouched. */
     suspend fun resetDayState(newDayEpoch: Long) {
         dataStore.edit {
