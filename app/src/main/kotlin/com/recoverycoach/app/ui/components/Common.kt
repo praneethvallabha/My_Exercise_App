@@ -19,6 +19,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.recoverycoach.app.ui.effects.clickSpark
+import com.recoverycoach.app.ui.effects.magneticPress
 import com.recoverycoach.app.ui.theme.RecoveryColors
 import com.recoverycoach.app.ui.theme.RecoveryType
 
@@ -89,7 +91,8 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .magneticPress()
+            .clickSpark(color = RecoveryColors.Surface, onClick = onClick)
             .background(RecoveryColors.Primary, RoundedCornerShape(100.dp))
             .height(50.dp),
         horizontalArrangement = Arrangement.Center,
@@ -110,7 +113,8 @@ fun OutlinedPillButton(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clickable(onClick = onClick)
+            .magneticPress()
+            .clickSpark(color = textColor, onClick = onClick)
             .border(1.dp, borderColor, RoundedCornerShape(100.dp))
             .height(48.dp),
         horizontalArrangement = Arrangement.Center,

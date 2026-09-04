@@ -1,0 +1,7 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_nav_checkin">
+    <target android:name="root" android:animation="@animator/nav_scale_in" />
+    <target android:name="body" android:animation="@animator/nav_body_activate" />
+    <target android:name="clip" android:animation="@animator/nav_stroke_thicken" />
+    <target android:name="tick" android:animation="@animator/nav_stroke_thicken_bold" />
+</animated-vector>

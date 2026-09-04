@@ -1,6 +1,10 @@
 package com.recoverycoach.app.ui.screens
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,16 +36,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.recoverycoach.app.R
 import com.recoverycoach.app.data.PlanItem
 import com.recoverycoach.app.data.RecoveryLevel
 import com.recoverycoach.app.data.RecoveryViewModel
-import com.recoverycoach.app.ui.components.GuidanceCard
 import com.recoverycoach.app.ui.components.OutlinedPillButton
 import com.recoverycoach.app.ui.components.RecoveryCard
 import com.recoverycoach.app.ui.components.RowDivider
 import com.recoverycoach.app.ui.components.SectionEyebrow
 import com.recoverycoach.app.ui.components.SectionTitle
 import com.recoverycoach.app.ui.components.StatRow
+import com.recoverycoach.app.ui.effects.CountUpText
+import com.recoverycoach.app.ui.effects.ShinyText
+import com.recoverycoach.app.ui.effects.aurora
+import com.recoverycoach.app.ui.effects.clickSpark
 import com.recoverycoach.app.ui.theme.RecoveryColors
 import com.recoverycoach.app.ui.theme.RecoveryMotion
 import com.recoverycoach.app.ui.theme.RecoveryType
@@ -64,7 +73,6 @@ fun TodayScreen(
     ) {
         Header()
         RecommendationCard(viewModel)
-        GuidanceCard(viewModel.guidance)
         TodaysPlanSection(viewModel)
         ActualActivitySection(viewModel, onEditActivity)
         RecoverySection(viewModel)
@@ -108,11 +116,19 @@ private fun RecommendationCard(viewModel: RecoveryViewModel) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .clip(RoundedCornerShape(22.dp))
             .background(cardBg, RoundedCornerShape(22.dp))
+            .aurora(tones = listOf(level.cardBg, RecoveryColors.Surface, level.loadBarColor.copy(alpha = 0.35f)))
             .padding(20.dp),
     ) {
         Text("TODAY'S RECOMMENDATION", style = RecoveryType.heroLabel, color = cardText)
-        Text(level.title, style = RecoveryType.heroTitle, color = cardText, modifier = Modifier.padding(top = 6.dp))
+        ShinyText(
+            text = level.title,
+            style = RecoveryType.heroTitle,
+            baseColor = cardText,
+            highlightColor = RecoveryColors.Surface,
+            modifier = Modifier.padding(top = 6.dp),
+        )
         Column(modifier = Modifier.padding(top = 14.dp), verticalArrangement = Arrangement.spacedBy(9.dp)) {
             viewModel.recommendationReasons.forEach { reason ->
                 Row(horizontalArrangement = Arrangement.spacedBy(9.dp)) {
@@ -148,12 +164,13 @@ private fun TodaysPlanSection(viewModel: RecoveryViewModel) {
     }
 }
 
+@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 private fun PlanRow(item: PlanItem, onToggle: () -> Unit) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable(onClick = onToggle)
+            .clickSpark(color = RecoveryColors.Primary, onClick = onToggle)
             .padding(vertical = 10.dp, horizontal = 6.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -170,11 +187,9 @@ private fun PlanRow(item: PlanItem, onToggle: () -> Unit) {
             animationSpec = recoveryTween(RecoveryMotion.FAST_MS),
             label = "planCheckBorder",
         )
-        val tickScale by animateFloatAsState(
-            targetValue = if (item.done) 1f else 0f,
-            animationSpec = recoveryTween(RecoveryMotion.FAST_MS, RecoveryMotion.Decelerate),
-            label = "planCheckTick",
-        )
+        // The tick is a stroke that draws itself on rather than a glyph that
+        // pops in — it reads as the item being ticked off, not swapped out.
+        val tick = AnimatedImageVector.animatedVectorResource(R.drawable.avd_plan_check)
         Box(
             modifier = Modifier
                 .size(22.dp)
@@ -183,14 +198,11 @@ private fun PlanRow(item: PlanItem, onToggle: () -> Unit) {
                 .border(2.dp, borderColor, RoundedCornerShape(6.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                "✓",
-                color = RecoveryColors.Surface,
-                style = RecoveryType.rowValue,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .scale(tickScale)
-                    .alpha(tickScale),
+            Icon(
+                painter = rememberAnimatedVectorPainter(tick, atEnd = item.done),
+                contentDescription = null,
+                tint = RecoveryColors.Surface,
+                modifier = Modifier.size(15.dp),
             )
         }
         Column {
@@ -304,7 +316,12 @@ private fun SevenDayTrendSection(viewModel: RecoveryViewModel) {
 @Composable
 private fun TrendStat(number: String, label: String, modifier: Modifier = Modifier) {
     Column(modifier = modifier) {
-        Text(number, style = RecoveryType.statNumber, color = RecoveryColors.TextPrimary)
+        CountUpText(
+            value = (number.toDoubleOrNull() ?: 0.0).toInt(),
+            style = RecoveryType.statNumber,
+            color = RecoveryColors.TextPrimary,
+            format = { if (number.contains('.')) number else it.toString() },
+        )
         Text(label, style = RecoveryType.statLabel, color = RecoveryColors.TextSecondary)
     }
 }

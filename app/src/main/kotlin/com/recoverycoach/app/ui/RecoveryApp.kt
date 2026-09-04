@@ -31,6 +31,7 @@ import com.recoverycoach.app.data.RecoveryViewModel
 import com.recoverycoach.app.ui.components.BottomNavBar
 import com.recoverycoach.app.ui.navigation.RecoveryDestination
 import com.recoverycoach.app.ui.screens.CheckInScreen
+import com.recoverycoach.app.ui.screens.InsightsScreen
 import com.recoverycoach.app.ui.screens.LogActivitySheetContent
 import com.recoverycoach.app.ui.screens.SettingsScreen
 import com.recoverycoach.app.ui.screens.TodayScreen
@@ -112,6 +113,7 @@ fun RecoveryApp(viewModel: RecoveryViewModel = viewModel()) {
                         },
                         modifier = Modifier.fillMaxSize(),
                     )
+                    RecoveryDestination.INSIGHTS -> InsightsScreen(viewModel = viewModel, modifier = Modifier.fillMaxSize())
                     RecoveryDestination.WEEK -> WeekScreen(viewModel = viewModel, modifier = Modifier.fillMaxSize())
                     RecoveryDestination.SETTINGS -> SettingsScreen(viewModel = viewModel, modifier = Modifier.fillMaxSize())
                 }

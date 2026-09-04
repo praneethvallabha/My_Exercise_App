@@ -29,13 +29,13 @@ data class PlanItem(
 /** What was actually logged for the day, entered manually via the Log Activity sheet. */
 @Serializable
 data class ActivityLog(
-    val morningWalkKm: Double = 4.12,
-    val morningWalkMin: Int = 47,
-    val totalWalkKm: Double = 6.8,
-    val steps: Int = 9412,
-    val swimM: Int = 800,
-    val swimMin: Int = 42,
-    val heartPoints: Int = 31,
+    val morningWalkKm: Double = 0.0,
+    val morningWalkMin: Int = 0,
+    val totalWalkKm: Double = 0.0,
+    val steps: Int = 0,
+    val swimM: Int = 0,
+    val swimMin: Int = 0,
+    val heartPoints: Int = 0,
     /**
      * Minutes of resistance / strength work. Zero means no session that day.
      * ADA counts *sessions* on nonconsecutive days rather than minutes, so the

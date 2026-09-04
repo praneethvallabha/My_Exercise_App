@@ -1,24 +1,21 @@
 package com.recoverycoach.app.ui.navigation
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BarChart
-import androidx.compose.material.icons.filled.FactCheck
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Today
-import androidx.compose.material.icons.outlined.BarChart
-import androidx.compose.material.icons.outlined.FactCheck
-import androidx.compose.material.icons.outlined.Settings
-import androidx.compose.material.icons.outlined.Today
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.annotation.DrawableRes
+import com.recoverycoach.app.R
 
+/**
+ * Each tab points at an AnimatedVectorDrawable rather than a pair of static
+ * icons, so selecting a tab animates the outline into its active state instead
+ * of swapping one image for another.
+ */
 enum class RecoveryDestination(
     val route: String,
     val label: String,
-    val icon: ImageVector,
-    val selectedIcon: ImageVector,
+    @param:DrawableRes val animatedIcon: Int,
 ) {
-    TODAY("today", "Today", Icons.Outlined.Today, Icons.Filled.Today),
-    CHECK_IN("check_in", "Check-in", Icons.Outlined.FactCheck, Icons.Filled.FactCheck),
-    WEEK("week", "Week", Icons.Outlined.BarChart, Icons.Filled.BarChart),
-    SETTINGS("settings", "Settings", Icons.Outlined.Settings, Icons.Filled.Settings),
+    TODAY("today", "Today", R.drawable.avd_nav_today),
+    CHECK_IN("check_in", "Check-in", R.drawable.avd_nav_checkin),
+    INSIGHTS("insights", "Insights", R.drawable.avd_nav_insights),
+    WEEK("week", "Week", R.drawable.avd_nav_week),
+    SETTINGS("settings", "Settings", R.drawable.avd_nav_settings),
 }

@@ -1,0 +1,4 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_plan_check">
+    <target android:name="tick" android:animation="@animator/check_draw_on" />
+</animated-vector>
