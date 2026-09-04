@@ -51,7 +51,7 @@ Merging #3 first is not possible and should not be attempted.
 |---|---|
 | `docs/plans/guidance-and-motion-plan.md` | Full implementation plan, all citations, verification record. Committed in PR #1. |
 | `docs/prompts/plan-guidance-and-motion.md` | The reusable `/plan` prompt written at your request, in the style lifted from the Opus 5 system-prompt structure. Committed in PR #1. |
-| `fri4.md` | **This document.** Repo root. Currently **uncommitted**. |
+| `fri4.md` | **This document.** Repo root. Committed on `feat/adaptive-plan` (PR #3). |
 | `.github/workflows/android.yml` | CI: tests, lint, assembleDebug, uploads APK artifact. In PR #2. |
 | `~/.claude-work/projects/-Users-praneeth-My-Exercise-App/memory/` | Two memories: option-(b) history decision, no-unit-changes constraint. Outside the repo, survives sessions. |
 | `.idea/gradle.xml` | Gradle JDK repointed to Studio's bundled JBR 21. Gitignored, machine-local. |
@@ -531,7 +531,6 @@ session.
 ## 8. Loose ends
 
 1. **PR #2 and #3 are unmerged.** Nothing reaches `main` until you merge #2 first.
-2. **`fri4.md` is uncommitted.** This file.
 3. **Scratchpad screenshots will be lost** (§2.2) — including the only before/after evidence of the plan contradiction.
 4. **`docs/plans/guidance-and-motion-plan.md` is now partly stale.** It describes the guidance card living on Today, which PR #2 moved. Not updated.
 5. **Recovery-day `RecoveryLevel` for archived days uses `loadPercent = 0`** — a deliberate approximation (§6.2/M7). A past day's true load-vs-baseline is unrecoverable from what is persisted.
