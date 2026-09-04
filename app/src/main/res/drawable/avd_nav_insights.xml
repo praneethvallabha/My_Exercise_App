@@ -1,0 +1,7 @@
+<animated-vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_nav_insights">
+    <target android:name="root" android:animation="@animator/nav_scale_in" />
+    <target android:name="axis" android:animation="@animator/nav_stroke_thicken" />
+    <target android:name="line" android:animation="@animator/nav_stroke_thicken_bold" />
+    <target android:name="peak" android:animation="@animator/nav_stroke_thicken" />
+</animated-vector>

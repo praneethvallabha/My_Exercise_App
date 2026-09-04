@@ -30,6 +30,7 @@ import com.recoverycoach.app.ui.components.RowDivider
 import com.recoverycoach.app.ui.components.SectionEyebrow
 import com.recoverycoach.app.ui.components.StatRow
 import com.recoverycoach.app.ui.effects.BlurIn
+import com.recoverycoach.app.ui.effects.EmptyStatePulse
 import com.recoverycoach.app.ui.effects.ShinyText
 import com.recoverycoach.app.ui.theme.RecoveryColors
 import com.recoverycoach.app.ui.theme.RecoveryMotion
@@ -204,14 +205,19 @@ private fun DailyDetailCard(day: WeekDayRecord) {
 @Composable
 private fun EmptyHistoryCard() {
     RecoveryCard {
-        Text("Nothing logged yet", style = RecoveryType.rowValue, color = RecoveryColors.TextPrimary)
-        Text(
-            "Days appear here once you save a check-in or log an activity. " +
-                "Trends and guidance are built only from days you actually recorded.",
-            style = RecoveryType.rowCaption,
-            color = RecoveryColors.TextSecondary,
-            modifier = Modifier.padding(top = 4.dp),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            EmptyStatePulse(size = 58.dp)
+            Column {
+                Text("Nothing logged yet", style = RecoveryType.rowValue, color = RecoveryColors.TextPrimary)
+                Text(
+                    "Days appear here once you save a check-in or log an activity. " +
+                        "Trends are built only from days you actually recorded.",
+                    style = RecoveryType.rowCaption,
+                    color = RecoveryColors.TextSecondary,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
+        }
     }
 }
 

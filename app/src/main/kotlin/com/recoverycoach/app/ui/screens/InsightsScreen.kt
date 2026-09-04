@@ -11,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -45,6 +46,8 @@ import com.recoverycoach.app.domain.Tip
 import com.recoverycoach.app.domain.TipSeverity
 import com.recoverycoach.app.ui.components.RecoveryCard
 import com.recoverycoach.app.ui.effects.BlurIn
+import com.recoverycoach.app.ui.effects.CelebrationBurst
+import com.recoverycoach.app.ui.effects.EmptyStatePulse
 import com.recoverycoach.app.ui.effects.CountUpText
 import com.recoverycoach.app.ui.effects.ShinyText
 import com.recoverycoach.app.ui.effects.aurora
@@ -188,6 +191,10 @@ private fun FilterChip(
 
 @Composable
 private fun WeeklyScorecard(guidance: GuidanceResult) {
+    val cleared = guidance.daysLogged >= GuidanceEngine.WINDOW_DAYS &&
+        guidance.weeklyAerobicMinutes >= guidance.weeklyAerobicTargetMinutes
+
+    Box(contentAlignment = Alignment.Center) {
     RecoveryCard(
         modifier = Modifier.aurora(
             tones = listOf(RecoveryColors.PrimarySoft, RecoveryColors.NormalBg, RecoveryColors.EasyBg),
@@ -253,6 +260,9 @@ private fun WeeklyScorecard(guidance: GuidanceResult) {
             modifier = Modifier.padding(top = 14.dp),
         )
     }
+        // Fires once when the week is genuinely cleared, over the card it belongs to.
+        CelebrationBurst(play = cleared)
+    }
 }
 
 @Composable
@@ -282,26 +292,23 @@ private fun ProgressTrack(fraction: Float, color: Color) {
 private fun BaselineNotice(guidance: GuidanceResult) {
     val remaining = guidance.daysUntilFullGuidance
     RecoveryCard(padding = PaddingValues(16.dp)) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Icon(
-                Icons.Outlined.Bolt,
-                contentDescription = null,
-                tint = RecoveryColors.Primary,
-                modifier = Modifier.size(18.dp),
-            )
-            Text(
-                "$remaining more ${if (remaining == 1) "day" else "days"} to a full week",
-                style = RecoveryType.rowValue,
-                color = RecoveryColors.TextPrimary,
-            )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            EmptyStatePulse(size = 52.dp)
+            Column {
+                Text(
+                    "$remaining more ${if (remaining == 1) "day" else "days"} to a full week",
+                    style = RecoveryType.rowValue,
+                    color = RecoveryColors.TextPrimary,
+                )
+                Text(
+                    "Weekly targets need seven logged days before they mean anything. " +
+                        "${guidance.daysLogged} recorded so far.",
+                    style = RecoveryType.rowCaption,
+                    color = RecoveryColors.TextSecondary,
+                    modifier = Modifier.padding(top = 4.dp),
+                )
+            }
         }
-        Text(
-            "Weekly targets need seven logged days before they mean anything. " +
-                "${guidance.daysLogged} recorded so far.",
-            style = RecoveryType.rowCaption,
-            color = RecoveryColors.TextSecondary,
-            modifier = Modifier.padding(top = 6.dp),
-        )
     }
 }
 

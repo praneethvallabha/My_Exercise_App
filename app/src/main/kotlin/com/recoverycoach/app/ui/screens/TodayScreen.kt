@@ -1,6 +1,10 @@
 package com.recoverycoach.app.ui.screens
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.graphics.ExperimentalAnimationGraphicsApi
+import androidx.compose.animation.graphics.res.animatedVectorResource
+import androidx.compose.animation.graphics.res.rememberAnimatedVectorPainter
+import androidx.compose.animation.graphics.vector.AnimatedImageVector
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -18,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.recoverycoach.app.R
 import com.recoverycoach.app.data.PlanItem
 import com.recoverycoach.app.data.RecoveryLevel
 import com.recoverycoach.app.data.RecoveryViewModel
@@ -158,6 +164,7 @@ private fun TodaysPlanSection(viewModel: RecoveryViewModel) {
     }
 }
 
+@OptIn(ExperimentalAnimationGraphicsApi::class)
 @Composable
 private fun PlanRow(item: PlanItem, onToggle: () -> Unit) {
     Row(
@@ -180,11 +187,9 @@ private fun PlanRow(item: PlanItem, onToggle: () -> Unit) {
             animationSpec = recoveryTween(RecoveryMotion.FAST_MS),
             label = "planCheckBorder",
         )
-        val tickScale by animateFloatAsState(
-            targetValue = if (item.done) 1f else 0f,
-            animationSpec = recoveryTween(RecoveryMotion.FAST_MS, RecoveryMotion.Decelerate),
-            label = "planCheckTick",
-        )
+        // The tick is a stroke that draws itself on rather than a glyph that
+        // pops in — it reads as the item being ticked off, not swapped out.
+        val tick = AnimatedImageVector.animatedVectorResource(R.drawable.avd_plan_check)
         Box(
             modifier = Modifier
                 .size(22.dp)
@@ -193,14 +198,11 @@ private fun PlanRow(item: PlanItem, onToggle: () -> Unit) {
                 .border(2.dp, borderColor, RoundedCornerShape(6.dp)),
             contentAlignment = Alignment.Center,
         ) {
-            Text(
-                "✓",
-                color = RecoveryColors.Surface,
-                style = RecoveryType.rowValue,
-                textAlign = TextAlign.Center,
-                modifier = Modifier
-                    .scale(tickScale)
-                    .alpha(tickScale),
+            Icon(
+                painter = rememberAnimatedVectorPainter(tick, atEnd = item.done),
+                contentDescription = null,
+                tint = RecoveryColors.Surface,
+                modifier = Modifier.size(15.dp),
             )
         }
         Column {
